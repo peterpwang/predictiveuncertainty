@@ -39,7 +39,7 @@ class AbstractImageClassificationModel(ABC):
     def define_model(self):
         pass
     
-    # Display test result of an image
+    # Display test result
     def display_results(self, history):
         acc = history.history['accuracy']
         val_acc = history.history['val_accuracy']

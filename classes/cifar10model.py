@@ -112,7 +112,7 @@ class VGG3DropoutCIFAR10Model(AbstractCIFAR10ImageClassificationModel):
         return model
 
 
-class VGG3DropoutDataAugumentationCIFAR10Model(VGG3DropoutCIFAR10Model):
+class VGG3DropoutDataAugmentationCIFAR10Model(VGG3DropoutCIFAR10Model):
 
     def run(self):
 

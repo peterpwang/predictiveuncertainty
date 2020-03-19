@@ -134,7 +134,7 @@ class VGG3DropoutDataAugmentationCIFAR10Model(VGG3DropoutCIFAR10Model):
                                       validation_data=(test_images, test_labels), 
                                       verbose=0)
 
-        acc = model.evaluate(test_images, test_labels, verbose=0)
+        _, acc = model.evaluate(test_images, test_labels, verbose=0)
         print('> %.3f' % (acc * 100.0))
 
         self.display_results(history)

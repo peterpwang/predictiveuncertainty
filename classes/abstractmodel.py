@@ -61,7 +61,7 @@ class AbstractImageClassificationModel(ABC):
         plt.plot(epochs_range, val_loss, label='Validation Loss')
         plt.legend(loc='upper right')
         plt.title('Training and Validation Loss')
-        plt.show()
+        plt.savefig('result.png')
         
     def run(self):
 
@@ -76,7 +76,7 @@ class AbstractImageClassificationModel(ABC):
                             batch_size=self.batch_size,
                             validation_data=(test_images, test_labels))
 
-        acc = model.evaluate(test_images, test_labels, verbose=0)
+        _, acc = model.evaluate(test_images, test_labels, verbose=0)
         print('> %.3f' % (acc * 100.0))
 
         self.display_results(history)

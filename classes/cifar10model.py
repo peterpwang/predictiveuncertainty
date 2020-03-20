@@ -125,12 +125,12 @@ class VGG3DropoutDataAugmentationCIFAR10Model(VGG3DropoutCIFAR10Model):
         # create data generator
         datagen = ImageDataGenerator(width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True)
         # prepare iterator
-        it_train = datagen.flow(train_images, train_labels, batch_size=64)
+        it_train = datagen.flow(train_images, train_labels, batch_size=self.batch_size)
         # fit model
         steps = int(train_images.shape[0] / 64)
         history = model.fit(it_train, 
                                       steps_per_epoch=steps, 
-                                      epochs=10, 
+                                      epochs=self.epochs, 
                                       validation_data=(test_images, test_labels), 
                                       verbose=0)
 

@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import datasets, layers, models
+from tensorflow.keras.optimizers import SGD
 
 # Helper libraries
 import numpy as np
@@ -39,6 +40,11 @@ class AbstractImageClassificationModel(ABC):
     def define_model(self):
         pass
     
+    # compile model
+    def compile_model(self, model):
+        opt = SGD(lr=0.001, momentum=0.9)
+        model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+
     # Display test result
     def display_results(self, history):
         acc = history.history['accuracy']

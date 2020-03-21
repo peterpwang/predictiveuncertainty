@@ -10,7 +10,6 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
-from tensorflow.keras.optimizers import SGD
 
 
 class AbstractCIFAR10ImageClassificationModel(AbstractImageClassificationModel):
@@ -33,9 +32,7 @@ class VGG1CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
         model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
         model.add(Dense(10, activation='softmax'))
         
-        # compile model
-        opt = SGD(lr=0.001, momentum=0.9)
-        model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+        self.compile_model(model)
         return model
     
 
@@ -54,9 +51,7 @@ class VGG2CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
         model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
         model.add(Dense(10, activation='softmax'))
         
-        # compile model
-        opt = SGD(lr=0.001, momentum=0.9)
-        model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+        self.compile_model(model)
         return model
 
 
@@ -78,9 +73,7 @@ class VGG3CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
         model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
         model.add(Dense(10, activation='softmax'))
         
-        # compile model
-        opt = SGD(lr=0.001, momentum=0.9)
-        model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+        self.compile_model(model)
         return model
 
 
@@ -106,9 +99,7 @@ class VGG3DropoutCIFAR10Model(AbstractCIFAR10ImageClassificationModel):
         model.add(Dropout(0.2))
         model.add(Dense(10, activation='softmax'))
         
-        # compile model
-        opt = SGD(lr=0.001, momentum=0.9)
-        model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+        self.compile_model(model)
         return model
 
 

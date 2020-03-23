@@ -48,7 +48,7 @@ class AbstractImageClassificationModel(ABC):
         model.compile(optimizer=opt, 
             loss='categorical_crossentropy', 
             #metrics=['accuracy', ece, tf.keras.metrics.CategoricalCrossentropy(), correct_nll])
-            metrics=['accuracy', ece, correct_nll])
+            metrics=['accuracy', ece, correct_nll, incorrect_nll])
 
     # Display test result
     def display_results(self, history):
@@ -98,8 +98,18 @@ class AbstractImageClassificationModel(ABC):
         
     def run(self):
 
-        #cfg = K.tf.ConfigProto(gpu_options={'allow_growth': True})
-        #K.set_session(K.tf.Session(config=cfg))
+        # Fix GPU error
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            try:
+                # Currently, memory growth needs to be the same across GPUs
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            except RuntimeError as e:
+                # Memory growth must be set before GPUs have been initialized
+                print(e)
 
         train_images, train_labels, test_images, test_labels = self.load_dataset()
 
@@ -134,9 +144,12 @@ def correct_nll(y_true, y_pred):
     index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
     index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
     correct = tf.cast(tf.equal(index_true, index_pred), tf.float32)
-    y_true = correct * y_true
-    y_pred = correct * y_pred
-    return tf.math.reduce_sum(tf.keras.backend.categorical_crossentropy(y_true, y_pred))
+    correct = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(correct, rep=10, axis=0), shape=(64,10))
+
+    y_true = tf.math.multiply(correct, y_true)
+    y_pred = tf.math.multiply(correct, y_pred)
+
+    return tf.math.reduce_mean(tf.keras.backend.categorical_crossentropy(y_true, y_pred))
 
 
 # Incorrect NLL(loss)
@@ -144,6 +157,9 @@ def incorrect_nll(y_true, y_pred):
     index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
     index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
     incorrect = tf.cast(tf.not_equal(index_true, index_pred), tf.float32)
-    y_true = incorrect * y_true
-    y_pred = incorrect * y_pred
-    return tf.math.reduce_sum(tf.keras.backend.categorical_crossentropy(y_true, y_pred))
+    incorrect = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(incorrect, rep=10, axis=0), shape=(64,10))
+
+    y_true = tf.math.multiply(incorrect, y_true)
+    y_pred = tf.math.multiply(incorrect, y_pred)
+
+    return tf.math.reduce_mean(tf.keras.backend.categorical_crossentropy(y_true, y_pred))

@@ -47,8 +47,7 @@ class AbstractImageClassificationModel(ABC):
         opt = SGD(lr=0.001, momentum=0.9)
         model.compile(optimizer=opt, 
             loss='categorical_crossentropy', 
-            #metrics=['accuracy', ece, tf.keras.metrics.CategoricalCrossentropy(), correct_nll])
-            metrics=['accuracy', ece, correct_nll, incorrect_nll])
+            metrics=['accuracy', ece, correct_nll, incorrect_nll, correct_entropy, incorrect_entropy, tf.keras.metrics.CategoricalCrossentropy()])
 
     # Display test result
     def display_results(self, history):
@@ -58,12 +57,16 @@ class AbstractImageClassificationModel(ABC):
         val_loss = history.history['val_loss']
         ece = history.history['ece']
         val_ece = history.history['val_ece']
-        #categorical_crossentropy = history.history['categorical_crossentropy']
-        #val_categorical_crossentropy = history.history['val_categorical_crossentropy']
+        categorical_crossentropy = history.history['categorical_crossentropy']
+        val_categorical_crossentropy = history.history['val_categorical_crossentropy']
         correct_nll = history.history['correct_nll']
         val_correct_nll = history.history['val_correct_nll']
         incorrect_nll = history.history['incorrect_nll']
         val_incorrect_nll = history.history['val_incorrect_nll']
+        correct_entropy = history.history['correct_entropy']
+        val_correct_entropy = history.history['val_correct_entropy']
+        incorrect_entropy = history.history['incorrect_entropy']
+        val_incorrect_entropy = history.history['val_incorrect_entropy']
 
         epochs_range = range(self.epochs)
 
@@ -75,24 +78,28 @@ class AbstractImageClassificationModel(ABC):
         plt.title('Training and Validation Accuracy')
 
         plt.subplot(2, 2, 2)
-        plt.plot(epochs_range, loss, label='Training Loss')
-        plt.plot(epochs_range, val_loss, label='Validation Loss')
-        plt.legend(loc='upper right')
-        plt.title('Training and Validation Loss')
-
-        plt.subplot(2, 2, 3)
         plt.plot(epochs_range, ece, label='Training ECE')
         plt.plot(epochs_range, val_ece, label='Validation ECE')
         plt.legend(loc='upper right')
         plt.title('Training and Validation ECE')
 
-        plt.subplot(2, 2, 4)
+        plt.subplot(2, 2, 3)
         plt.plot(epochs_range, correct_nll, label='Training Correct NLL')
         plt.plot(epochs_range, val_correct_nll, label='Validation Correct NLL')
         plt.plot(epochs_range, incorrect_nll, label='Training Incorrect NLL')
         plt.plot(epochs_range, val_incorrect_nll, label='Validation Incorrect NLL')
         plt.legend(loc='upper right')
         plt.title('Training and Validation NLL')
+
+        plt.subplot(2, 2, 4)
+        plt.plot(epochs_range, correct_entropy, label='Training Correct entropy')
+        plt.plot(epochs_range, val_correct_entropy, label='Validation Correct entropy')
+        plt.plot(epochs_range, incorrect_entropy, label='Training Incorrect entropy')
+        plt.plot(epochs_range, val_incorrect_entropy, label='Validation Incorrect entropy')
+        plt.plot(epochs_range, categorical_crossentropy, label='Training entropy')
+        plt.plot(epochs_range, val_categorical_crossentropy, label='Validation entropy')
+        plt.legend(loc='upper right')
+        plt.title('Training and Validation entropy')
 
         plt.savefig('result.png')
         
@@ -122,11 +129,11 @@ class AbstractImageClassificationModel(ABC):
                             batch_size=self.batch_size,
                             validation_data=(test_images, test_labels))
 
-        _, acc, ece, correct_nll, incorrect_nll = model.evaluate(test_images, test_labels, verbose=0)
+        _, acc, ece, correct_nll, incorrect_nll, correct_entropy, incorrect_entropy, crossentropy = model.evaluate(test_images, test_labels, verbose=0)
         print('acc> %.3f' % acc)
         print('ece> %.3f' % ece)
         print('correct nll> %.3f' % correct_nll)
-        print('incorrect nll> %.3f' % incorrect_nll)
+        print('correct entropy> %.3f' % correct_entropy)
 
         self.display_results(history)
 
@@ -163,3 +170,30 @@ def incorrect_nll(y_true, y_pred):
     y_pred = tf.math.multiply(incorrect, y_pred)
 
     return tf.math.reduce_mean(tf.keras.backend.categorical_crossentropy(y_true, y_pred))
+
+
+# Correct Entropy
+def correct_entropy(y_true, y_pred):
+    index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
+    index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
+    correct = tf.cast(tf.equal(index_true, index_pred), tf.float32)
+    correct = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(correct, rep=10, axis=0), shape=(64,10))
+
+    y_true = tf.math.multiply(correct, y_true)
+    logits = tf.math.multiply(correct, y_pred)
+
+    return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=logits)
+
+
+# Incorrect Entropy
+def incorrect_entropy(y_true, y_pred):
+    index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
+    index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
+    incorrect = tf.cast(tf.not_equal(index_true, index_pred), tf.float32)
+    incorrect = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(incorrect, rep=10, axis=0), shape=(64,10))
+
+    y_true = tf.math.multiply(incorrect, y_true)
+    logits = tf.math.multiply(incorrect, y_pred)
+
+    return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=logits)
+

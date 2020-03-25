@@ -150,11 +150,10 @@ def ece(y_true, y_pred):
 def correct_nll(y_true, y_pred):
     index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
     index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
-    correct = tf.cast(tf.equal(index_true, index_pred), tf.float32)
-    correct = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(correct, rep=10, axis=0), shape=(64,10))
+    correct = tf.equal(index_true, index_pred)
 
-    y_true = tf.math.multiply(correct, y_true)
-    y_pred = tf.math.multiply(correct, y_pred)
+    y_true = tf.boolean_mask(y_true, correct)
+    y_pred = tf.boolean_mask(y_pred, correct)
 
     return tf.math.reduce_mean(tf.keras.backend.categorical_crossentropy(y_true, y_pred))
 
@@ -163,11 +162,10 @@ def correct_nll(y_true, y_pred):
 def incorrect_nll(y_true, y_pred):
     index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
     index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
-    incorrect = tf.cast(tf.not_equal(index_true, index_pred), tf.float32)
-    incorrect = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(incorrect, rep=10, axis=0), shape=(64,10))
+    incorrect = tf.not_equal(index_true, index_pred)
 
-    y_true = tf.math.multiply(incorrect, y_true)
-    y_pred = tf.math.multiply(incorrect, y_pred)
+    y_true = tf.boolean_mask(y_true, incorrect)
+    y_pred = tf.boolean_mask(y_pred, incorrect)
 
     return tf.math.reduce_mean(tf.keras.backend.categorical_crossentropy(y_true, y_pred))
 
@@ -176,11 +174,10 @@ def incorrect_nll(y_true, y_pred):
 def correct_entropy(y_true, y_pred):
     index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
     index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
-    correct = tf.cast(tf.equal(index_true, index_pred), tf.float32)
-    correct = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(correct, rep=10, axis=0), shape=(64,10))
+    correct = tf.equal(index_true, index_pred)
 
-    y_true = tf.math.multiply(correct, y_true)
-    logits = tf.math.multiply(correct, y_pred)
+    y_true = tf.boolean_mask(y_true, correct)
+    logits = tf.boolean_mask(y_pred, correct)
 
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=logits)
 
@@ -189,11 +186,10 @@ def correct_entropy(y_true, y_pred):
 def incorrect_entropy(y_true, y_pred):
     index_true = tf.math.argmax(y_true, axis=1, output_type='int32')
     index_pred = tf.math.argmax(y_pred, axis=1, output_type='int32')
-    incorrect = tf.cast(tf.not_equal(index_true, index_pred), tf.float32)
-    incorrect = tf.keras.backend.reshape(tf.keras.backend.repeat_elements(incorrect, rep=10, axis=0), shape=(64,10))
+    incorrect = tf.not_equal(index_true, index_pred)
 
-    y_true = tf.math.multiply(incorrect, y_true)
-    logits = tf.math.multiply(incorrect, y_pred)
+    y_true = tf.boolean_mask(y_true, incorrect)
+    logits = tf.boolean_mask(y_pred, incorrect)
 
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=logits)
 

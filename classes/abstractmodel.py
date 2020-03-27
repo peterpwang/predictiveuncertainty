@@ -14,6 +14,12 @@ import matplotlib.pyplot as plt
 
 from abc import ABC, abstractmethod
 
+# Public variables
+bins = 25
+reliabilities_batch = []
+reliabilities_epoch = []
+
+
 class AbstractImageClassificationModel(ABC):
     
     def __init__(self, epochs, num_classes, batch_size):
@@ -47,7 +53,7 @@ class AbstractImageClassificationModel(ABC):
         opt = SGD(lr=0.001, momentum=0.9)
         model.compile(optimizer=opt, 
             loss='categorical_crossentropy', 
-            metrics=['accuracy', ece, correct_nll, incorrect_nll, correct_entropy, incorrect_entropy, tf.keras.metrics.CategoricalCrossentropy()])
+            metrics=['accuracy', ece, correct_nll, incorrect_nll, correct_entropy, incorrect_entropy, tf.keras.metrics.CategoricalCrossentropy(), reliability_histogram])
 
     # Display test result
     def display_results(self, history):
@@ -67,6 +73,7 @@ class AbstractImageClassificationModel(ABC):
         val_correct_entropy = history.history['val_correct_entropy']
         incorrect_entropy = history.history['incorrect_entropy']
         val_incorrect_entropy = history.history['val_incorrect_entropy']
+        reliability_histogram = history.history['reliability_histogram']
 
         epochs_range = range(self.epochs)
 
@@ -128,13 +135,19 @@ class AbstractImageClassificationModel(ABC):
         history = model.fit(train_images, train_labels, 
                             epochs=self.epochs, 
                             batch_size=self.batch_size,
-                            validation_data=(test_images, test_labels))
+                            validation_data=(test_images, test_labels),
+                            callbacks=[tf.keras.callbacks.BaseLogger(stateful_metrics=['reliability_histogram']), ReliabilityHistogramCallback()])
 
-        _, acc, ece, correct_nll, incorrect_nll, correct_entropy, incorrect_entropy, crossentropy = model.evaluate(test_images, test_labels, verbose=0)
+        _, acc, ece, correct_nll, incorrect_nll, correct_entropy, incorrect_entropy, crossentropy, hist = model.evaluate(test_images, test_labels, verbose=0)
         print('acc> %.3f' % acc)
         print('ece> %.3f' % ece)
         print('correct nll> %.3f' % correct_nll)
         print('correct entropy> %.3f' % correct_entropy)
+
+        # Reliabilities histogram
+        global reliabilities_epoch
+        for reliability in reliabilities_epoch:
+            print(reliability)
 
         self.display_results(history)
 
@@ -144,7 +157,7 @@ def ece(y_true, y_pred):
     y_true = tf.math.argmax(tf.dtypes.cast(y_true, tf.int32),1)
     logits = tf.math.log(y_pred)
     return tfp.stats.expected_calibration_error(
-        25, logits=logits, labels_true=y_true)
+        bins, logits=logits, labels_true=y_true)
 
 
 # Correct NLL(loss)
@@ -193,4 +206,31 @@ def incorrect_entropy(y_true, y_pred):
     logits = tf.boolean_mask(y_pred, incorrect)
 
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=logits)
+
+
+# Reliability histogram
+def reliability_histogram(y_true, y_pred):
+    global reliabilities_batch
+    hist_values = tf.math.reduce_sum(tf.math.multiply(y_true, y_pred), axis=1)
+    value_range = [0.0, 1.0]
+    hist_indexes = tf.histogram_fixed_width_bins(hist_values, value_range, nbins=bins)
+    hist = tf.math.unsorted_segment_mean(hist_values, hist_indexes, bins)
+
+    sess =  tf.compat.v1.Session()
+    result = hist.eval(session=sess)
+    reliabilities_batch = sess.run(result)
+
+    return hist
+
+
+# Rliability histogram callback
+class ReliabilityHistogramCallback(tf.keras.callbacks.Callback):
+
+    def on_epoch_end(self, epoch, logs=None):
+        global reliabilities_batch, reliabilities_epoch
+
+        #sess =  tf.compat.v1.Session()
+        #result = reliabilities_batch.eval(session=sess)
+        #hist = sess.run(result)
+        reliabilities_epoch.append(reliabilities_batch)
 

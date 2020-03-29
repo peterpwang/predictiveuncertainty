@@ -57,9 +57,10 @@ class CorrectNLL(Metric):
         y_pred = y_pred[mask]
         y = y[mask]
 
-        nll = F.nll_loss(F.log_softmax(y_pred, dim=0), y)
-        self._sum_nll += nll
-        self._count_nll += y.shape[0]
+        if len(y_pred) > 0:
+            nll = F.nll_loss(F.log_softmax(y_pred, dim=0), y)
+            self._sum_nll += nll
+            self._count_nll += y_pred.shape[0]
 
     def compute(self):
         return self._sum_nll / self._count_nll
@@ -88,9 +89,10 @@ class IncorrectNLL(Metric):
         y_pred = y_pred[mask]
         y = y[mask]
 
-        nll = F.nll_loss(F.log_softmax(y_pred, dim=0), y)
-        self._sum_nll += nll
-        self._count_nll += y.shape[0]
+        if len(y_pred) > 0:
+            nll = F.nll_loss(F.log_softmax(y_pred, dim=0), y)
+            self._sum_nll += nll
+            self._count_nll += y_pred.shape[0]
 
     def compute(self):
         return self._sum_nll / self._count_nll
@@ -120,9 +122,10 @@ class CorrectCrossEntropy(Metric):
         y_pred = y_pred[mask]
         y = y[mask]
 
-        entropy = F.cross_entropy(F.log_softmax(y_pred, dim=0), y)
-        self._sum_cross_entropy += entropy
-        self._count_cross_entropy += y.shape[0]
+        if len(y_pred) > 0:
+            entropy = F.cross_entropy(F.log_softmax(y_pred, dim=0), y)
+            self._sum_cross_entropy += entropy
+            self._count_cross_entropy += y_pred.shape[0]
 
     def compute(self):
         return self._sum_cross_entropy / self._count_cross_entropy
@@ -151,9 +154,10 @@ class IncorrectCrossEntropy(Metric):
         y_pred = y_pred[mask]
         y = y[mask]
 
-        entropy = F.cross_entropy(F.log_softmax(y_pred, dim=0), y)
-        self._sum_cross_entropy += entropy
-        self._count_cross_entropy += y.shape[0]
+        if len(y_pred) > 0:
+            entropy = F.cross_entropy(F.log_softmax(y_pred, dim=0), y)
+            self._sum_cross_entropy += entropy
+            self._count_cross_entropy += y_pred.shape[0]
 
     def compute(self):
         return self._sum_cross_entropy / self._count_cross_entropy

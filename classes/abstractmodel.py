@@ -51,8 +51,7 @@ class AbstractImageClassificationModel(ABC):
         val_loss = history['val_loss']
         acc = history['accuracy']
         val_acc = history['val_accuracy']
-        #ece = history.history['ece']
-        #val_ece = history.history['val_ece']
+        val_ece = history['val_ece']
         #categorical_crossentropy = history['categorical_crossentropy']
         #val_categorical_crossentropy = history['val_categorical_crossentropy']
         nll = history['nll']
@@ -65,7 +64,6 @@ class AbstractImageClassificationModel(ABC):
         val_correct_entropy = history['val_correct_entropy']
         incorrect_entropy = history['incorrect_entropy']
         val_incorrect_entropy = history['val_incorrect_entropy']
-        #reliability_histogram = history.history['reliability_histogram']
 
         epochs_range = range(self.epochs)
 
@@ -91,7 +89,7 @@ class AbstractImageClassificationModel(ABC):
         plt.subplot(2, 2, 3)
         plt.plot(epochs_range, loss, label='Training classfication error')
         plt.plot(epochs_range, val_loss, label='Test classfication error')
-        #plt.plot(epochs_range, val_ece, label='Test ECE')
+        plt.plot(epochs_range, val_ece, label='Test ECE')
         plt.legend(loc='upper right')
         plt.title('Test Error')
 
@@ -102,6 +100,27 @@ class AbstractImageClassificationModel(ABC):
         plt.title('Training and Test accuracy')
 
         plt.savefig('result.png')
+
+        # Reliability plot
+        bin_boundaries = np.linspace(0, 1, bins)
+
+        val_accuracy_sum_bins = history['val_accuracy_sum_bins']
+        val_accuracy_num_bins = history['val_accuracy_num_bins']
+
+        for i in range(self.epochs):
+            plt.figure(figsize=(8, 16))
+            plt.subplot(2, 1, 1)
+            plt.plot(bin_boundaries, bin_boundaries)
+            plt.bar(val_accuracy_sum_bins[i], val_accuracy_sum_bins[i], width=0.02, label='Accuracy')
+            plt.legend(loc='upper right')
+            plt.title('Reliability Plot')
+    
+            plt.subplot(2, 1, 2)
+            plt.bar(bin_boundaries, val_accuracy_num_bins[i], width=0.02, label='Accuracy')
+            plt.legend(loc='upper right')
+            plt.title('Reliability Plot')
+
+            plt.savefig('reliability_plot_' + str(i+1) + '.png')
         
 
     def run(self):
@@ -130,7 +149,8 @@ class AbstractImageClassificationModel(ABC):
             'correct_nll': CorrectNLL(),
             'incorrect_nll': IncorrectNLL(),
             'correct_entropy': CorrectCrossEntropy(),
-            'incorrect_entropy': IncorrectCrossEntropy()
+            'incorrect_entropy': IncorrectCrossEntropy(),
+            'ece': ECE()
         }
         train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device)
         validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device)
@@ -142,12 +162,15 @@ class AbstractImageClassificationModel(ABC):
                 "correct_nll": [], "val_correct_nll": [], 
                 "incorrect_nll": [], "val_incorrect_nll": [], 
                 "correct_entropy": [], "val_correct_entropy": [], 
-                "incorrect_entropy": [], "val_incorrect_entropy": [] }
+                "incorrect_entropy": [], "val_incorrect_entropy": [],
+                "val_ece": [], 
+                "val_accuracy_sum_bins": [], 
+                "val_accuracy_num_bins": []}
 
         def log_validation_results(trainer):
             train_evaluator.run(train_loader)
             metrics = train_evaluator.state.metrics
-            accuracy = metrics['accuracy']*100
+            accuracy = metrics['accuracy']
             loss = metrics['loss']
             nll = metrics['nll']
             correct_nll = metrics['correct_nll']
@@ -161,18 +184,19 @@ class AbstractImageClassificationModel(ABC):
             history['incorrect_nll'].append(incorrect_nll)
             history['correct_entropy'].append(correct_entropy)
             history['incorrect_entropy'].append(incorrect_entropy)
-            print("Train Results - Epoch: {}  Accuracy: {:.2f} Loss: {:.2f} NLL: {:.2f}"
+            print("Train Results - Epoch: {:3d}  Accuracy: {:.4f} Loss: {:.4f} NLL: {:.4f}"
                   .format(trainer.state.epoch, accuracy, loss, nll), end=" ")
 
             validation_evaluator.run(validation_loader)
             metrics = validation_evaluator.state.metrics
-            accuracy = metrics['accuracy']*100
+            accuracy = metrics['accuracy']
             loss = metrics['loss']
             nll = metrics['nll']
             correct_nll = metrics['correct_nll']
             incorrect_nll = metrics['incorrect_nll']
             correct_entropy = metrics['correct_entropy']
             incorrect_entropy = metrics['incorrect_entropy']
+            ece, accuracy_sum_bins, accuracy_num_bins = metrics['ece']
             history['val_accuracy'].append(accuracy)
             history['val_loss'].append(loss)
             history['val_nll'].append(nll)
@@ -180,8 +204,13 @@ class AbstractImageClassificationModel(ABC):
             history['val_incorrect_nll'].append(incorrect_nll)
             history['val_correct_entropy'].append(correct_entropy)
             history['val_incorrect_entropy'].append(incorrect_entropy)
-            print("Validation Results - Accuracy: {:.2f} Loss: {:.2f} NLL: {:.2f}"
+            history['val_ece'].append(ece)
+            print("Validation Results - Accuracy: {:.4f} Loss: {:.4f} NLL: {:.4f}"
                   .format(accuracy, loss, nll))
+
+            # Reliability plot
+            history['val_accuracy_sum_bins'].append(accuracy_sum_bins)
+            history['val_accuracy_num_bins'].append(accuracy_num_bins)
     
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_validation_results)
 

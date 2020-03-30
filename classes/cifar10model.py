@@ -11,9 +11,12 @@ class AbstractCIFAR10ImageClassificationModel(AbstractImageClassificationModel):
 
     # Load dataset and split into training and test sets.
     def load_dataset(self):
-        transform = transforms.Compose(
-            [transforms.ToTensor(),
-             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
 
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
@@ -53,6 +56,17 @@ class VGG1CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     def define_model(self):
         model = {}
         net = Net()
+        net.to("cuda")
+        model["net"] = net
+        return model
+
+
+class Resnet50CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
+    
+    # Set model
+    def define_model(self):
+        model = {}
+        net = torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False)
         net.to("cuda")
         model["net"] = net
         return model

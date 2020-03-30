@@ -100,6 +100,7 @@ class AbstractImageClassificationModel(ABC):
         plt.title('Training and Test accuracy')
 
         plt.savefig('result.png')
+        plt.close()
 
         # Reliability plot
         bin_boundaries = np.linspace(0, 1, bins)
@@ -121,6 +122,9 @@ class AbstractImageClassificationModel(ABC):
             plt.title('Reliability Plot')
 
             plt.savefig('reliability_plot_' + str(i+1) + '.png')
+            
+            if i%19 == 0:
+                plt.close()
         
 
     def run(self):

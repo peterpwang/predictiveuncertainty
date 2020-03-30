@@ -111,12 +111,12 @@ class AbstractImageClassificationModel(ABC):
             plt.figure(figsize=(8, 16))
             plt.subplot(2, 1, 1)
             plt.plot(bin_boundaries, bin_boundaries)
-            plt.bar(val_accuracy_sum_bins[i], val_accuracy_sum_bins[i], width=0.02, label='Accuracy')
+            plt.bar(bin_boundaries, val_accuracy_sum_bins[i], width=0.015, label='Test Accuracy')
             plt.legend(loc='upper right')
             plt.title('Reliability Plot')
     
             plt.subplot(2, 1, 2)
-            plt.bar(bin_boundaries, val_accuracy_num_bins[i], width=0.02, label='Accuracy')
+            plt.bar(bin_boundaries, val_accuracy_num_bins[i], width=0.015, label='Test Samples')
             plt.legend(loc='upper right')
             plt.title('Reliability Plot')
 

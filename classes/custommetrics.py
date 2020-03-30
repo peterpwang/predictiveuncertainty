@@ -208,7 +208,7 @@ class ECE(Metric):
 
             idx += 1
 
-        self._sum_ece += ece.item()
+        self._sum_ece = ece.item()
 
     def compute(self):
         for i in range(self.n_bins):

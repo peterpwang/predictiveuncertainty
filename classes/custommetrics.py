@@ -31,7 +31,10 @@ class NLL(Metric):
         self._count_nll += y.shape[0]
 
     def compute(self):
-        return self._sum_nll / self._count_nll
+        if self._count_nll == 0:
+            return 0.0
+        else:
+            return self._sum_nll / self._count_nll
 
 
 # Correct NLL(loss)
@@ -63,7 +66,10 @@ class CorrectNLL(Metric):
             self._count_nll += y_pred.shape[0]
 
     def compute(self):
-        return self._sum_nll / self._count_nll
+        if self._count_nll == 0:
+            return 0.0
+        else:
+            return self._sum_nll / self._count_nll
 
 
 # Incorrect NLL(loss)
@@ -95,7 +101,10 @@ class IncorrectNLL(Metric):
             self._count_nll += y_pred.shape[0]
 
     def compute(self):
-        return self._sum_nll / self._count_nll
+        if self._count_nll == 0:
+            return 0.0
+        else:
+            return self._sum_nll / self._count_nll
 
 
 
@@ -128,7 +137,10 @@ class CorrectCrossEntropy(Metric):
             self._count_cross_entropy += y_pred.shape[0]
 
     def compute(self):
-        return self._sum_cross_entropy / self._count_cross_entropy
+        if self._count_cross_entropy == 0:
+            return 0.0
+        else:
+            return self._sum_cross_entropy / self._count_cross_entropy
 
 
 # Incorrect Entropy
@@ -160,7 +172,10 @@ class IncorrectCrossEntropy(Metric):
             self._count_cross_entropy += y_pred.shape[0]
 
     def compute(self):
-        return self._sum_cross_entropy / self._count_cross_entropy
+        if self._count_cross_entropy == 0:
+            return 0.0
+        else:
+            return self._sum_cross_entropy / self._count_cross_entropy
 
 
 # ECE & histogram

@@ -121,7 +121,7 @@ class AbstractImageClassificationModel(ABC):
             plt.legend(loc='upper right')
             plt.title('Reliability Plot')
 
-            plt.savefig('reliability_plot_' + str(i+1) + '.png')
+            plt.savefig('reliability_plot_' + '{:03d}'.format(i+1) + '.png')
             
             if i%19 == 0:
                 plt.close()

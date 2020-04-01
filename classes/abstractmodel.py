@@ -188,8 +188,8 @@ class AbstractImageClassificationModel(ABC):
             history['incorrect_nll'].append(incorrect_nll)
             history['correct_entropy'].append(correct_entropy)
             history['incorrect_entropy'].append(incorrect_entropy)
-            print("Train Results - Epoch: {:3d}  Accuracy: {:.4f} Loss: {:.4f} NLL: {:.4f}"
-                  .format(trainer.state.epoch, accuracy, loss, nll), end=" ")
+            print("Train Results - Epoch: {:3d}  Accuracy: {:.4f} Loss: {:.4f} Entropy: {:.4f} {:.4f}  "
+                  .format(trainer.state.epoch, accuracy, loss, nll, correct_entropy, incorrect_entropy), end=" ")
 
             validation_evaluator.run(validation_loader)
             metrics = validation_evaluator.state.metrics
@@ -209,8 +209,8 @@ class AbstractImageClassificationModel(ABC):
             history['val_correct_entropy'].append(correct_entropy)
             history['val_incorrect_entropy'].append(incorrect_entropy)
             history['val_ece'].append(ece)
-            print("Validation Results - Accuracy: {:.4f} Loss: {:.4f} NLL: {:.4f}"
-                  .format(accuracy, loss, nll))
+            print("Validation Results - Accuracy: {:.4f} Loss: {:.4f} Entropy: {:.4f} {:.4f}"
+                  .format(accuracy, loss, nll, correct_entropy, incorrect_entropy))
 
             # Reliability plot
             history['val_accuracy_sum_bins'].append(accuracy_sum_bins)

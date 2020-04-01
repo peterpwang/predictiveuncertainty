@@ -9,6 +9,8 @@ import torch.optim as optim
 
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss, RunningAverage
+from ignite.contrib.metrics import GpuInfo
+from ignite.contrib.handlers.tqdm_logger import ProgressBar
 
 # Helper libraries
 import numpy as np
@@ -40,10 +42,10 @@ class AbstractImageClassificationModel(ABC):
     # compile model
     def compile_model(self, model):
         net = model["net"]
-        criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-        model["criterion"] = criterion
+        criterion = nn.CrossEntropyLoss()
         model["optimizer"] = optimizer
+        model["criterion"] = criterion
 
     # Display test result
     def display_results(self, history):
@@ -147,14 +149,14 @@ class AbstractImageClassificationModel(ABC):
         trainer = create_supervised_trainer(net, optimizer, criterion, device=device)
 
         metrics = {
-            'accuracy': Accuracy(output_transform=lambda output: (torch.round(output[0]), output[1])),
-            'loss': Loss(criterion),
-            'nll': NLL(),
-            'correct_nll': CorrectNLL(),
-            'incorrect_nll': IncorrectNLL(),
-            'correct_entropy': CorrectCrossEntropy(),
-            'incorrect_entropy': IncorrectCrossEntropy(),
-            'ece': ECE()
+            'accuracy': Accuracy(device=device, output_transform=lambda output: (torch.round(output[0]), output[1])),
+            'loss': Loss(criterion, device=device),
+            'nll': NLL(device=device),
+            'correct_nll': CorrectNLL(device=device),
+            'incorrect_nll': IncorrectNLL(device=device),
+            'correct_entropy': CorrectCrossEntropy(device=device),
+            'incorrect_entropy': IncorrectCrossEntropy(device=device),
+            'ece': ECE(device=device)
         }
         train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device)
         validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device)
@@ -189,7 +191,7 @@ class AbstractImageClassificationModel(ABC):
             history['correct_entropy'].append(correct_entropy)
             history['incorrect_entropy'].append(incorrect_entropy)
             print("Train Results - Epoch: {:3d}  Accuracy: {:.4f} Loss: {:.4f} Entropy: {:.4f} {:.4f}  "
-                  .format(trainer.state.epoch, accuracy, loss, nll, correct_entropy, incorrect_entropy), end=" ")
+                  .format(trainer.state.epoch, accuracy, loss, correct_entropy, incorrect_entropy), end=" ")
 
             validation_evaluator.run(validation_loader)
             metrics = validation_evaluator.state.metrics
@@ -210,13 +212,17 @@ class AbstractImageClassificationModel(ABC):
             history['val_incorrect_entropy'].append(incorrect_entropy)
             history['val_ece'].append(ece)
             print("Validation Results - Accuracy: {:.4f} Loss: {:.4f} Entropy: {:.4f} {:.4f}"
-                  .format(accuracy, loss, nll, correct_entropy, incorrect_entropy))
+                  .format(accuracy, loss, correct_entropy, incorrect_entropy))
 
             # Reliability plot
             history['val_accuracy_sum_bins'].append(accuracy_sum_bins)
             history['val_accuracy_num_bins'].append(accuracy_num_bins)
     
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_validation_results)
+
+        GpuInfo().attach(trainer, name='gpu')
+        pbar = ProgressBar()
+        pbar.attach(trainer, metric_names=['gpu:0 mem(%)', 'gpu:0 util(%)'])
 
         # Track loss during epoch and print out in progress bar
         #RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')

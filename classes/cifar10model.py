@@ -76,8 +76,7 @@ class TestCIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     # Set model
     def define_model(self):
         model = {}
-        net = TestNet()
-        net.to("cuda")
+        net = TestNet().to("cuda")
         model["net"] = net
         return model
 
@@ -88,8 +87,7 @@ class Resnet50CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     # Set model
     def define_model(self):
         model = {}
-        net = torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False)
-        net.to("cuda")
+        net = torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False).to("cuda")
         model["net"] = net
         return model
 

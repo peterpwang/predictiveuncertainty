@@ -211,8 +211,8 @@ class AbstractImageClassificationModel(ABC):
             history['val_correct_entropy'].append(correct_entropy)
             history['val_incorrect_entropy'].append(incorrect_entropy)
             history['val_ece'].append(ece)
-            print("Validation Results - Accuracy: {:.4f} Loss: {:.4f} Entropy: {:.4f} {:.4f}"
-                  .format(accuracy, loss, correct_entropy, incorrect_entropy))
+            print("Validation Results - Accuracy: {:.4f} Loss: {:.4f} Entropy: {:.4f} {:.4f} NLL {:.4f} {:.4f}"
+                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll))
 
             # Reliability plot
             history['val_accuracy_sum_bins'].append(accuracy_sum_bins)

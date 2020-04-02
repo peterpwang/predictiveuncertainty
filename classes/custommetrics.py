@@ -32,11 +32,8 @@ class NLL(Metric):
         batch_size = y_pred.shape[0]
 
         y_pred = F.softmax(y_pred, dim=1)
-        y = F.one_hot(y, num_classes=y_pred.shape[1])
-        product = y * y_pred
-        product = torch.sum(product, dim=1)
-        nll = torch.log(product)
-        nll = -nll.sum().item()
+        y_pred = y_pred[range(y.shape[0]), y]
+        nll = -torch.log(y_pred).sum().item()
 
         self._sum_nll += nll
         self._count_nll += batch_size
@@ -75,11 +72,8 @@ class CorrectNLL(Metric):
 
         if len(y_pred) > 0:
             y_pred = F.softmax(y_pred, dim=1)
-            y = F.one_hot(y, num_classes=y_pred.shape[1])
-            product = y * y_pred
-            product = torch.sum(product, dim=1)
-            nll = torch.log(product)
-            nll = -nll.sum().item()
+            y_pred = y_pred[range(y.shape[0]), y]
+            nll = -torch.log(y_pred).sum().item()
             self._sum_nll += nll
             self._count_nll += batch_size
         #print("correct:", self._sum_nll, ":", self._count_nll)
@@ -117,11 +111,8 @@ class IncorrectNLL(Metric):
 
         if len(y_pred) > 0:
             y_pred = F.softmax(y_pred, dim=1)
-            y = F.one_hot(y, num_classes=y_pred.shape[1])
-            product = y * y_pred
-            product = torch.sum(product, dim=1)
-            nll = torch.log(product)
-            nll = -nll.sum().item()
+            y_pred = y_pred[range(y.shape[0]), y]
+            nll = -torch.log(y_pred).sum().item()
             self._sum_nll += nll
             self._count_nll += batch_size
         #print("incorrect:", self._sum_nll, ":", self._count_nll)
@@ -150,25 +141,22 @@ class CorrectCrossEntropy(Metric):
     @reinit__is_reduced
     def update(self, output):
         y_pred, y = output
-        batch_size = y_pred.shape[0]
 
-        y_pred = F.softmax(y_pred, dim=1)
-        indices = torch.argmax(y_pred, dim=1)
+        indices = torch.argmax(F.softmax(y_pred, dim=1), dim=1)
         mask = torch.eq(indices, y).view(-1)
         y_pred = y_pred[mask]
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = torch.log(y_pred)
-            entropy = F.cross_entropy(entropy, y).item()
+            entropy = F.cross_entropy(y_pred, y).item()
             self._sum_cross_entropy += entropy
-            self._count_cross_entropy += batch_size
+            self._count_cross_entropy += 1
 
     def compute(self):
         if self._count_cross_entropy == 0:
             return 0.0
         else:
-            print("incorrect:", self._sum_cross_entropy / self._count_cross_entropy)
+            print("correct:", self._sum_cross_entropy / self._count_cross_entropy)
             return self._sum_cross_entropy / self._count_cross_entropy
 
 
@@ -189,25 +177,23 @@ class IncorrectCrossEntropy(Metric):
     @reinit__is_reduced
     def update(self, output):
         y_pred, y = output
-        batch_size = y_pred.shape[0]
 
-        y_pred = F.softmax(y_pred, dim=1)
-        indices = torch.argmax(y_pred, dim=1)
+        indices = torch.argmax(F.softmax(y_pred, dim=1), dim=1)
         mask = torch.ne(indices, y).view(-1)
         y_pred = y_pred[mask]
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = torch.log(y_pred)
-            entropy = F.cross_entropy(entropy, y).item()
+            entropy = F.cross_entropy(y_pred, y).item()
             self._sum_cross_entropy += entropy
-            self._count_cross_entropy += batch_size
+            self._count_cross_entropy += 1
+            print("e:", self._sum_cross_entropy, self._count_cross_entropy)
 
     def compute(self):
         if self._count_cross_entropy == 0:
             return 0.0
         else:
-            print("correct:", self._sum_cross_entropy / self._count_cross_entropy)
+            print("incorrect:", self._sum_cross_entropy / self._count_cross_entropy)
             return self._sum_cross_entropy / self._count_cross_entropy
 
 

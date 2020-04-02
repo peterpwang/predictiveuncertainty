@@ -148,15 +148,14 @@ class CorrectCrossEntropy(Metric):
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = F.cross_entropy(y_pred, y).item()
+            entropy = F.cross_entropy(y_pred, y, reduction='sum').item()
             self._sum_cross_entropy += entropy
-            self._count_cross_entropy += 1
+            self._count_cross_entropy += y_pred.shape[0]
 
     def compute(self):
         if self._count_cross_entropy == 0:
             return 0.0
         else:
-            print("correct:", self._sum_cross_entropy / self._count_cross_entropy)
             return self._sum_cross_entropy / self._count_cross_entropy
 
 
@@ -184,16 +183,14 @@ class IncorrectCrossEntropy(Metric):
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = F.cross_entropy(y_pred, y).item()
+            entropy = F.cross_entropy(y_pred, y, reduction='sum').item()
             self._sum_cross_entropy += entropy
-            self._count_cross_entropy += 1
-            print("e:", self._sum_cross_entropy, self._count_cross_entropy)
+            self._count_cross_entropy += y_pred.shape[0]
 
     def compute(self):
         if self._count_cross_entropy == 0:
             return 0.0
         else:
-            print("incorrect:", self._sum_cross_entropy / self._count_cross_entropy)
             return self._sum_cross_entropy / self._count_cross_entropy
 
 

@@ -22,12 +22,12 @@ class AbstractCIFAR10ImageClassificationModel(AbstractImageClassificationModel):
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                          shuffle=True, num_workers=2)
+                                          shuffle=True, num_workers=2, pin_memory=True)
 
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=64,
-                                         shuffle=False, num_workers=2)
+                                         shuffle=False, num_workers=2, pin_memory=True)
         return trainloader, testloader
 
 
@@ -65,12 +65,12 @@ class TestCIFAR10Model(AbstractCIFAR10ImageClassificationModel):
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                          shuffle=True, num_workers=2)
+                                          shuffle=True, num_workers=2, pin_memory=True)
 
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=64,
-                                         shuffle=False, num_workers=2)
+                                         shuffle=False, num_workers=2, pin_memory=True)
         return trainloader, testloader
     
     # Set model
@@ -87,7 +87,7 @@ class Resnet50CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     # Set model
     def define_model(self):
         model = {}
-        net = torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False).to("cuda")
-        model["net"] = net
+        net = torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False)
+        model["net"] = net.to("cuda")
         return model
 

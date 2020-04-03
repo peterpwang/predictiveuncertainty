@@ -141,6 +141,7 @@ class CorrectCrossEntropy(Metric):
     @reinit__is_reduced
     def update(self, output):
         y_pred, y = output
+        batch_size = y_pred.shape[0]
 
         indices = torch.argmax(F.softmax(y_pred, dim=1), dim=1)
         mask = torch.eq(indices, y).view(-1)
@@ -148,15 +149,14 @@ class CorrectCrossEntropy(Metric):
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = F.cross_entropy(y_pred, y, reduction='sum').item()
+            entropy = F.cross_entropy(y_pred, y, reduction='sum')
+            #y_pred = F.log_softmax(y_pred, dim=1)
+            #entropy = F.nll_loss(y_pred, y, reduction='sum')
             self._sum_cross_entropy += entropy
-            self._count_cross_entropy += y_pred.shape[0]
+            self._count_cross_entropy += batch_size
 
     def compute(self):
-        if self._count_cross_entropy == 0:
-            return 0.0
-        else:
-            return self._sum_cross_entropy / self._count_cross_entropy
+        return self._sum_cross_entropy / self._count_cross_entropy
 
 
 # Incorrect Entropy
@@ -176,6 +176,7 @@ class IncorrectCrossEntropy(Metric):
     @reinit__is_reduced
     def update(self, output):
         y_pred, y = output
+        batch_size = y_pred.shape[0]
 
         indices = torch.argmax(F.softmax(y_pred, dim=1), dim=1)
         mask = torch.ne(indices, y).view(-1)
@@ -183,15 +184,14 @@ class IncorrectCrossEntropy(Metric):
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = F.cross_entropy(y_pred, y, reduction='sum').item()
+            entropy = F.cross_entropy(y_pred, y, reduction='sum')
+            #y_pred = F.log_softmax(y_pred, dim=1)
+            #entropy = F.nll_loss(y_pred, y, reduction='sum')
             self._sum_cross_entropy += entropy
-            self._count_cross_entropy += y_pred.shape[0]
+            self._count_cross_entropy += batch_size
 
     def compute(self):
-        if self._count_cross_entropy == 0:
-            return 0.0
-        else:
-            return self._sum_cross_entropy / self._count_cross_entropy
+        return self._sum_cross_entropy / self._count_cross_entropy
 
 
 # ECE & histogram

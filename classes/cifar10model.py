@@ -20,16 +20,21 @@ class AbstractCIFAR10ImageClassificationModel(AbstractImageClassificationModel):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
 
-        trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+        dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
+        trainset, validationset = torch.utils.data.random_split(dataset, [45000, 5000])
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
+                                          shuffle=True, num_workers=2, pin_memory=True)
+        validationloader = torch.utils.data.DataLoader(validationset, batch_size=64,
                                           shuffle=True, num_workers=2, pin_memory=True)
 
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=64,
                                          shuffle=False, num_workers=2, pin_memory=True)
-        return trainloader, testloader
+        #print(len(trainloader), len(validationloader), len(testloader))
+
+        return trainloader, validationloader, testloader
 
 
 # Test model, quick and simple
@@ -63,17 +68,24 @@ class TestCIFAR10Model(AbstractCIFAR10ImageClassificationModel):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
 
-        trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+        dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
+        trainset, validationset = torch.utils.data.random_split(dataset, [45000, 5000])
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
+                                          shuffle=True, num_workers=2, pin_memory=True)
+        validationloader = torch.utils.data.DataLoader(validationset, batch_size=64,
                                           shuffle=True, num_workers=2, pin_memory=True)
 
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=64,
                                          shuffle=False, num_workers=2, pin_memory=True)
-        return trainloader, testloader
-    
+        #print(len(trainloader), len(validationloader), len(testloader))
+        #batch = next(iter(train_loader))
+        #print(batch)
+
+        return trainloader, validationloader, testloader
+
     # Set model
     def define_model(self):
         return TestNet().cuda()

@@ -14,8 +14,10 @@ class AbstractCIFAR10ImageClassificationModel(AbstractImageClassificationModel):
     # Load dataset and split into training and test sets.
     def load_dataset(self):
         transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            # This two lines help to improve accuracy but take about 240s/epoch on ResNet50.
+            # Without them, one epoch only takes about 30s on ResNet50.
+            #transforms.Resize(256),
+            #transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
@@ -23,15 +25,25 @@ class AbstractCIFAR10ImageClassificationModel(AbstractImageClassificationModel):
         dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
         trainset, validationset = torch.utils.data.random_split(dataset, [45000, 5000])
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                          shuffle=True, num_workers=2, pin_memory=True)
-        validationloader = torch.utils.data.DataLoader(validationset, batch_size=64,
-                                          shuffle=True, num_workers=2, pin_memory=True)
+
+        trainloader = torch.utils.data.DataLoader(trainset, 
+                batch_size=64,
+                shuffle=True, 
+                num_workers=0, 
+                pin_memory=True)
+        validationloader = torch.utils.data.DataLoader(validationset, 
+                batch_size=64,
+                shuffle=True, 
+                num_workers=0, 
+                pin_memory=True)
 
         testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transform)
-        testloader = torch.utils.data.DataLoader(testset, batch_size=64,
-                                         shuffle=False, num_workers=2, pin_memory=True)
+        testloader = torch.utils.data.DataLoader(testset, 
+                batch_size=64,
+                shuffle=False, 
+                num_workers=0, 
+                pin_memory=True)
         #print(len(trainloader), len(validationloader), len(testloader))
 
         return trainloader, validationloader, testloader
@@ -61,31 +73,6 @@ class TestNet(nn.Module):
 # Test Cifar 10 model
 class TestCIFAR10Model(AbstractCIFAR10ImageClassificationModel):
 
-    # Load dataset and split into training and test sets.
-    def load_dataset(self):
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
-
-        dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=transform)
-        trainset, validationset = torch.utils.data.random_split(dataset, [45000, 5000])
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                          shuffle=True, num_workers=2, pin_memory=True)
-        validationloader = torch.utils.data.DataLoader(validationset, batch_size=64,
-                                          shuffle=True, num_workers=2, pin_memory=True)
-
-        testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
-        testloader = torch.utils.data.DataLoader(testset, batch_size=64,
-                                         shuffle=False, num_workers=2, pin_memory=True)
-        #print(len(trainloader), len(validationloader), len(testloader))
-        #batch = next(iter(train_loader))
-        #print(batch)
-
-        return trainloader, validationloader, testloader
-
     # Set model
     def define_model(self):
         return TestNet().cuda()
@@ -96,5 +83,5 @@ class Resnet50CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):
-        return torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False).cuda()
+        return torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=True).cuda()
 

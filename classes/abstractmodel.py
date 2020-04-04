@@ -27,10 +27,10 @@ device = "cuda"
 
 class AbstractImageClassificationModel(ABC):
     
-    def __init__(self, epochs, num_classes, batch_size):
-        self.epochs = epochs
-        self.num_classes = num_classes
-        self.batch_size = batch_size;
+    def __init__(self, args):
+        self.epochs = args.epochs
+        self.num_classes = args.num_classes
+        self.batch_size = args.batch_size;
 
     # Load dataset and split into training and test sets.
     @abstractmethod
@@ -45,7 +45,7 @@ class AbstractImageClassificationModel(ABC):
     # compile model
     def compile_model(self, net):
         optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-        criterion = nn.CrossEntropyLoss().cuda()
+        criterion = nn.CrossEntropyLoss().cuda(0)
         return optimizer, criterion
         #print("device:", next(net.parameters()).device)
 
@@ -131,19 +131,20 @@ class AbstractImageClassificationModel(ABC):
 
     def run(self):
 
-        FORMAT = '%(asctime)-15s %(message)s'
-        logging.basicConfig(level=logging.INFO, format=FORMAT)
-
+        #FORMAT = '%(asctime)-15s %(message)s'
+        #logging.basicConfig(level=logging.INFO, format=FORMAT)
 
         # GPU related settings
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Torch:", torch.__version__, "(CPU+GPU)" if  torch.cuda.is_available() else "(CPU)")
+        torch.cuda.set_device(0)
 
         # Load dataset
         train_loader, validation_loader, test_loader = self.load_dataset()
 
         # Create model
         net = self.define_model()
+        net = net.cuda(0)
         optimizer, criterion = self.compile_model(net)
 
         metrics = {

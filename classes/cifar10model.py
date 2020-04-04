@@ -3,6 +3,7 @@ from .abstractmodel import AbstractImageClassificationModel
 import torch
 import torchvision
 import torchvision.transforms as transforms
+import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -75,19 +76,13 @@ class TestCIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):
-        model = {}
-        net = TestNet().to("cuda")
-        model["net"] = net
-        return model
+        return TestNet().cuda()
 
 
-# Resnet 50 Cifar model
+# Resnet50 Cifar model
 class Resnet50CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):
-        model = {}
-        net = torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False)
-        model["net"] = net.to("cuda")
-        return model
+        return torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False).cuda()
 

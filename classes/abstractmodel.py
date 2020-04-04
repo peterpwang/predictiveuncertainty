@@ -144,9 +144,9 @@ class AbstractImageClassificationModel(ABC):
 
         # Create model
         net = self.define_model()
-        net = net.cuda(0)
         optimizer, criterion = self.compile_model(net)
 
+        # Create trainer
         metrics = {
             'accuracy': Accuracy(output_transform=lambda output: (torch.round(output[0]), output[1]), device=device),
             'loss': Loss(criterion, device=device),
@@ -163,37 +163,17 @@ class AbstractImageClassificationModel(ABC):
         validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
         test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
 
-        # track train & validation accuracy and loss at end of each epoch
-        history = { "loss": [], "val_loss": [], "test_loss": [], 
-                "accuracy": [], "val_accuracy": [], "test_accuracy": [], 
-                "nll": [], "val_nll": [], "test_nll": [], 
-                "correct_nll": [], "val_correct_nll": [], "test_correct_nll": [], 
-                "incorrect_nll": [], "val_incorrect_nll": [], "test_incorrect_nll": [], 
-                "correct_entropy": [], "val_correct_entropy": [], "test_correct_entropy": [], 
-                "incorrect_entropy": [], "val_incorrect_entropy": [], "test_incorrect_entropy": [],
+        # Track train & test accuracy and loss at end of each epoch
+        history = { "val_loss": [], "test_loss": [], 
+                "val_accuracy": [], "test_accuracy": [], 
+                "val_nll": [], "test_nll": [], 
+                "val_correct_nll": [], "test_correct_nll": [], 
+                "val_incorrect_nll": [], "test_incorrect_nll": [], 
+                "val_correct_entropy": [], "test_correct_entropy": [], 
+                "val_incorrect_entropy": [], "test_incorrect_entropy": [],
                 "test_ece": [], 
                 "test_accuracy_sum_bins": [], 
                 "test_accuracy_num_bins": []}
-
-        def log_train_results(trainer):
-            train_evaluator.run(train_loader)
-            metrics = train_evaluator.state.metrics
-            accuracy = metrics['accuracy']
-            loss = metrics['loss']
-            nll = metrics['nll']
-            correct_nll = metrics['correct_nll']
-            incorrect_nll = metrics['incorrect_nll']
-            correct_entropy = metrics['correct_entropy']
-            incorrect_entropy = metrics['incorrect_entropy']
-            history['accuracy'].append(accuracy)
-            history['loss'].append(loss)
-            history['nll'].append(nll)
-            history['correct_nll'].append(correct_nll)
-            history['incorrect_nll'].append(incorrect_nll)
-            history['correct_entropy'].append(correct_entropy)
-            history['incorrect_entropy'].append(incorrect_entropy)
-            print("Train Results - Epoch: {:3d}  Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f}  "
-                  .format(trainer.state.epoch, accuracy, loss, correct_entropy, incorrect_entropy), end=" ")
 
         def log_validation_results(trainer):
             validation_evaluator.run(validation_loader)
@@ -214,7 +194,7 @@ class AbstractImageClassificationModel(ABC):
             history['val_correct_entropy'].append(correct_entropy)
             history['val_incorrect_entropy'].append(incorrect_entropy)
             print("Validation Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
-                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll))
+                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
     
         def log_test_results(trainer):
             test_evaluator.run(test_loader)
@@ -242,13 +222,12 @@ class AbstractImageClassificationModel(ABC):
             history['test_accuracy_sum_bins'].append(accuracy_sum_bins)
             history['test_accuracy_num_bins'].append(accuracy_num_bins)
     
-        #trainer.add_event_handler(Events.EPOCH_COMPLETED, log_train_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_validation_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
 
-        GpuInfo().attach(trainer, name='gpu')
-        pbar = ProgressBar()
-        pbar.attach(trainer, metric_names=['gpu:0 mem(%)', 'gpu:0 util(%)'])
+        #GpuInfo().attach(trainer, name='gpu')
+        #pbar = ProgressBar()
+        #pbar.attach(trainer, metric_names=['gpu:0 mem(%)', 'gpu:0 util(%)'])
 
         # Track loss during epoch and print out in progress bar
         #RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')

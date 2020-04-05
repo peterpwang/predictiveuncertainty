@@ -44,38 +44,38 @@ class AbstractImageClassificationModel(ABC):
     
     # compile model
     def compile_model(self, net):
-        optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+        optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
         criterion = nn.CrossEntropyLoss().cuda(0)
         return optimizer, criterion
         #print("device:", next(net.parameters()).device)
 
     # Display test result
     def display_results(self, history):
-        val_loss = history['val_loss']
+        loss = history['loss']
         test_loss = history['test_loss']
-        val_acc = history['val_accuracy']
+        acc = history['accuracy']
         test_acc = history['test_accuracy']
         test_ece = history['test_ece']
-        val_nll = history['val_nll']
+        nll = history['nll']
         test_nll = history['test_nll']
-        val_correct_nll = history['val_correct_nll']
+        correct_nll = history['correct_nll']
         test_correct_nll = history['test_correct_nll']
-        val_incorrect_nll = history['val_incorrect_nll']
+        incorrect_nll = history['incorrect_nll']
         test_incorrect_nll = history['test_incorrect_nll']
-        val_correct_entropy = history['val_correct_entropy']
+        correct_entropy = history['correct_entropy']
         test_correct_entropy = history['test_correct_entropy']
-        val_incorrect_entropy = history['val_incorrect_entropy']
+        incorrect_entropy = history['incorrect_entropy']
         test_incorrect_entropy = history['test_incorrect_entropy']
 
         epochs_range = range(self.epochs)
 
         plt.figure(figsize=(16, 16))
         plt.subplot(2, 2, 1)
-        plt.plot(epochs_range, val_correct_nll, label='Train NLL correct')
-        plt.plot(epochs_range, val_incorrect_nll, label='Train NLL incorrect')
-        plt.plot(epochs_range, val_nll, label='Train NLL')
-        plt.plot(epochs_range, val_correct_entropy, label='Train Entropy correct')
-        plt.plot(epochs_range, val_incorrect_entropy, label='Train Entropy incorrect')
+        plt.plot(epochs_range, correct_nll, label='Train NLL correct')
+        plt.plot(epochs_range, incorrect_nll, label='Train NLL incorrect')
+        plt.plot(epochs_range, nll, label='Train NLL')
+        plt.plot(epochs_range, correct_entropy, label='Train Entropy correct')
+        plt.plot(epochs_range, incorrect_entropy, label='Train Entropy incorrect')
         plt.legend(loc='lower right')
         plt.title('Train NLL & Entropy')
 
@@ -89,14 +89,14 @@ class AbstractImageClassificationModel(ABC):
         plt.title('Test NLL & Entropy')
 
         plt.subplot(2, 2, 3)
-        plt.plot(epochs_range, val_loss, label='Train classfication error')
+        plt.plot(epochs_range, loss, label='Train classfication error')
         plt.plot(epochs_range, test_loss, label='Test classfication error')
         plt.plot(epochs_range, test_ece, label='Test ECE')
         plt.legend(loc='upper right')
         plt.title('Test Error')
 
         plt.subplot(2, 2, 4)
-        plt.plot(epochs_range, val_acc, label='Train accuracy')
+        plt.plot(epochs_range, acc, label='Train accuracy')
         plt.plot(epochs_range, test_acc, label='Test accuracy')
         plt.legend(loc='upper right')
         plt.title('Train and Test accuracy')
@@ -125,8 +125,7 @@ class AbstractImageClassificationModel(ABC):
 
             plt.savefig('reliability_plot_' + '{:03d}'.format(i+1) + '.png')
             
-            if i%19 == 0:
-                plt.close()
+            plt.close()
         
 
     def run(self):
@@ -164,20 +163,20 @@ class AbstractImageClassificationModel(ABC):
         test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
 
         # Track train & test accuracy and loss at end of each epoch
-        history = { "val_loss": [], "test_loss": [], 
-                "val_accuracy": [], "test_accuracy": [], 
-                "val_nll": [], "test_nll": [], 
-                "val_correct_nll": [], "test_correct_nll": [], 
-                "val_incorrect_nll": [], "test_incorrect_nll": [], 
-                "val_correct_entropy": [], "test_correct_entropy": [], 
-                "val_incorrect_entropy": [], "test_incorrect_entropy": [],
+        history = { "loss": [], "test_loss": [], 
+                "accuracy": [], "test_accuracy": [], 
+                "nll": [], "test_nll": [], 
+                "correct_nll": [], "test_correct_nll": [], 
+                "incorrect_nll": [], "test_incorrect_nll": [], 
+                "correct_entropy": [], "test_correct_entropy": [], 
+                "incorrect_entropy": [], "test_incorrect_entropy": [],
                 "test_ece": [], 
                 "test_accuracy_sum_bins": [], 
                 "test_accuracy_num_bins": []}
 
-        def log_validation_results(trainer):
-            validation_evaluator.run(validation_loader)
-            metrics = validation_evaluator.state.metrics
+        def log_train_results(trainer):
+            train_evaluator.run(train_loader)
+            metrics = train_evaluator.state.metrics
             accuracy = metrics['accuracy']
             loss = metrics['loss']
             nll = metrics['nll']
@@ -186,14 +185,14 @@ class AbstractImageClassificationModel(ABC):
             correct_entropy = metrics['correct_entropy']
             incorrect_entropy = metrics['incorrect_entropy']
             ece, accuracy_sum_bins, accuracy_num_bins = metrics['ece']
-            history['val_accuracy'].append(accuracy)
-            history['val_loss'].append(loss)
-            history['val_nll'].append(nll)
-            history['val_correct_nll'].append(correct_nll)
-            history['val_incorrect_nll'].append(incorrect_nll)
-            history['val_correct_entropy'].append(correct_entropy)
-            history['val_incorrect_entropy'].append(incorrect_entropy)
-            print("Validation Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
+            history['accuracy'].append(accuracy)
+            history['loss'].append(loss)
+            history['nll'].append(nll)
+            history['correct_nll'].append(correct_nll)
+            history['incorrect_nll'].append(incorrect_nll)
+            history['correct_entropy'].append(correct_entropy)
+            history['incorrect_entropy'].append(incorrect_entropy)
+            print("Train Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
                   .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
     
         def log_test_results(trainer):
@@ -222,7 +221,7 @@ class AbstractImageClassificationModel(ABC):
             history['test_accuracy_sum_bins'].append(accuracy_sum_bins)
             history['test_accuracy_num_bins'].append(accuracy_num_bins)
     
-        trainer.add_event_handler(Events.EPOCH_COMPLETED, log_validation_results)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED, log_train_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
 
         #GpuInfo().attach(trainer, name='gpu')

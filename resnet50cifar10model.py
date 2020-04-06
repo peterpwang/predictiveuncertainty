@@ -14,6 +14,10 @@ if __name__ == "__main__":
                         help='number of classes')
     parser.add_argument('--batch_size', default=128, type=int, metavar='N',
                         help='batch size')
+    parser.add_argument('--lr', default=0.1, type=float, 
+                        help='learning rate')
+    parser.add_argument('--resume', action='store_true', 
+                        help='resume from checkpoint')
     args = parser.parse_args()
 
     model = cifar10model.Resnet50CIFAR10Model(args)

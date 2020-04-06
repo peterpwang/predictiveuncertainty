@@ -13,6 +13,7 @@ from ignite.contrib.metrics import GpuInfo
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
 
 # Helper libraries
+import os
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,7 +31,9 @@ class AbstractImageClassificationModel(ABC):
     def __init__(self, args):
         self.epochs = args.epochs
         self.num_classes = args.num_classes
-        self.batch_size = args.batch_size;
+        self.batch_size = args.batch_size
+        self.learning_rate = args.lr
+        self.resume = args.resume
 
     # Load dataset and split into training and test sets.
     @abstractmethod
@@ -44,10 +47,9 @@ class AbstractImageClassificationModel(ABC):
     
     # compile model
     def compile_model(self, net):
-        optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+        optimizer = optim.SGD(net.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=5e-4)
         criterion = nn.CrossEntropyLoss().cuda(0)
         return optimizer, criterion
-        #print("device:", next(net.parameters()).device)
 
     # Display test result
     def display_results(self, history):
@@ -101,7 +103,7 @@ class AbstractImageClassificationModel(ABC):
         plt.legend(loc='upper right')
         plt.title('Train and Test accuracy')
 
-        plt.savefig('result.png')
+        plt.savefig('results/result.png')
         plt.close()
 
         # Reliability plot
@@ -123,9 +125,28 @@ class AbstractImageClassificationModel(ABC):
             plt.legend(loc='upper right')
             plt.title('Reliability Plot')
 
-            plt.savefig('reliability_plot_' + '{:03d}'.format(i+1) + '.png')
+            plt.savefig('results/reliability_plot_' + '{:03d}'.format(i+1) + '.png')
             
             plt.close()
+        
+
+    def save_checkpoint(self, net, optimizer, start_epoch, history):
+        state = {
+            'net': net.state_dict(),
+            'optimizer': optimizer,
+            'start_epoch': start_epoch,
+            'history': history
+        }
+        torch.save(state, './checkpoints/checkpoint.bin')
+        
+
+    def load_checkpoint(self, net, optimizer, history):
+        checkpoint = torch.load('./checkpoints/checkpoint.bin')
+        net.load_state_dict(checkpoint['net'])
+        optimizer = checkpoint['optimizer']
+        start_epoch = checkpoint['start_epoch']
+        history = checkpoint['history']
+        return net, optimizer, start_epoch, history
         
 
     def run(self):
@@ -138,12 +159,32 @@ class AbstractImageClassificationModel(ABC):
         print("Torch:", torch.__version__, "(CPU+GPU)" if  torch.cuda.is_available() else "(CPU)")
         torch.cuda.set_device(0)
 
-        # Load dataset
-        train_loader, validation_loader, test_loader = self.load_dataset()
+        # Create directories
+        if not os.path.isdir('checkpoints'):
+            os.mkdir('checkpoints')
+        if not os.path.isdir('results'):
+            os.mkdir('results')
 
         # Create model
         net = self.define_model()
         optimizer, criterion = self.compile_model(net)
+
+        # Track train & test accuracy and loss at end of each epoch
+        history = { "loss": [], "test_loss": [], 
+                "accuracy": [], "test_accuracy": [], 
+                "nll": [], "test_nll": [], 
+                "correct_nll": [], "test_correct_nll": [], 
+                "incorrect_nll": [], "test_incorrect_nll": [], 
+                "correct_entropy": [], "test_correct_entropy": [], 
+                "incorrect_entropy": [], "test_incorrect_entropy": [],
+                "test_ece": [], 
+                "test_accuracy_sum_bins": [], 
+                "test_accuracy_num_bins": []}
+
+        # Resume training
+        start_epoch = 0
+        if self.resume:
+            net, optimizer, start_epoch, history = self.load_checkpoint(net, optimizer, history)
 
         # Create trainer
         metrics = {
@@ -162,17 +203,11 @@ class AbstractImageClassificationModel(ABC):
         validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
         test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
 
-        # Track train & test accuracy and loss at end of each epoch
-        history = { "loss": [], "test_loss": [], 
-                "accuracy": [], "test_accuracy": [], 
-                "nll": [], "test_nll": [], 
-                "correct_nll": [], "test_correct_nll": [], 
-                "incorrect_nll": [], "test_incorrect_nll": [], 
-                "correct_entropy": [], "test_correct_entropy": [], 
-                "incorrect_entropy": [], "test_incorrect_entropy": [],
-                "test_ece": [], 
-                "test_accuracy_sum_bins": [], 
-                "test_accuracy_num_bins": []}
+        def setup_state(trainer):
+            trainer.state.epoch = start_epoch
+
+        def save_state(trainer):
+            self.save_checkpoint(net, optimizer, start_epoch, history)
 
         def log_train_results(trainer):
             train_evaluator.run(train_loader)
@@ -221,6 +256,8 @@ class AbstractImageClassificationModel(ABC):
             history['test_accuracy_sum_bins'].append(accuracy_sum_bins)
             history['test_accuracy_num_bins'].append(accuracy_num_bins)
     
+        trainer.add_event_handler(Events.STARTED, setup_state)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED(every=2), save_state)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_train_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
 
@@ -231,7 +268,11 @@ class AbstractImageClassificationModel(ABC):
         # Track loss during epoch and print out in progress bar
         #RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')
 
+        # Load dataset
+        train_loader, validation_loader, test_loader = self.load_dataset()
+
         # kick off training...
         trainer.run(train_loader, max_epochs=self.epochs)
 
         self.display_results(history)
+

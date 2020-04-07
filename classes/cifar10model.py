@@ -14,7 +14,7 @@ class AbstractCIFAR10ImageClassificationModel(AbstractImageClassificationModel):
     # Load dataset and split into training and test sets.
     def load_dataset(self):
         train_transform = transforms.Compose([
-            # This two lines help to improve accuracy but take about 240s/epoch on ResNet50.
+            # These two lines help to improve accuracy but take about 240s/epoch on ResNet50.
             # Without them, one epoch only takes about 30s on ResNet50.
             #transforms.Resize(256),
             #transforms.CenterCrop(224),

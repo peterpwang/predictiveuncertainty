@@ -47,6 +47,7 @@ class AbstractImageClassificationModel(ABC):
     
     # compile model
     def compile_model(self, net):
+        print("Learning rate is set to ", self.learning_rate)
         optimizer = optim.SGD(net.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=5e-4)
         criterion = nn.CrossEntropyLoss().cuda(0)
         return optimizer, criterion
@@ -69,7 +70,7 @@ class AbstractImageClassificationModel(ABC):
         incorrect_entropy = history['incorrect_entropy']
         test_incorrect_entropy = history['test_incorrect_entropy']
 
-        epochs_range = range(self.epochs)
+        epochs_range = range(len(loss))
 
         plt.figure(figsize=(16, 16))
         plt.subplot(2, 2, 1)
@@ -130,14 +131,15 @@ class AbstractImageClassificationModel(ABC):
             plt.close()
         
 
-    def save_checkpoint(self, net, optimizer, start_epoch, history):
+    def save_checkpoint(self, trainer, net, optimizer, start_epoch, history):
         state = {
             'net': net.state_dict(),
             'optimizer': optimizer,
-            'start_epoch': start_epoch,
+            'start_epoch': trainer.state.epoch,
             'history': history
         }
         torch.save(state, './checkpoints/checkpoint.bin')
+        #print("Checkpoint saved.")
         
 
     def load_checkpoint(self, net, optimizer, history):
@@ -146,6 +148,7 @@ class AbstractImageClassificationModel(ABC):
         optimizer = checkpoint['optimizer']
         start_epoch = checkpoint['start_epoch']
         history = checkpoint['history']
+        print("State reloaded.", start_epoch)
         return net, optimizer, start_epoch, history
         
 
@@ -185,6 +188,7 @@ class AbstractImageClassificationModel(ABC):
         start_epoch = 0
         if self.resume:
             net, optimizer, start_epoch, history = self.load_checkpoint(net, optimizer, history)
+            optimizer, criterion = self.compile_model(net)
 
         # Create trainer
         metrics = {
@@ -207,7 +211,7 @@ class AbstractImageClassificationModel(ABC):
             trainer.state.epoch = start_epoch
 
         def save_state(trainer):
-            self.save_checkpoint(net, optimizer, start_epoch, history)
+            self.save_checkpoint(trainer, net, optimizer, start_epoch, history)
 
         def log_train_results(trainer):
             train_evaluator.run(train_loader)
@@ -227,8 +231,8 @@ class AbstractImageClassificationModel(ABC):
             history['incorrect_nll'].append(incorrect_nll)
             history['correct_entropy'].append(correct_entropy)
             history['incorrect_entropy'].append(incorrect_entropy)
-            print("Train Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
-                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
+            print("Epoch[{}] Train Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
+                  .format(trainer.state.epoch, accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
     
         def log_test_results(trainer):
             test_evaluator.run(test_loader)
@@ -257,9 +261,9 @@ class AbstractImageClassificationModel(ABC):
             history['test_accuracy_num_bins'].append(accuracy_num_bins)
     
         trainer.add_event_handler(Events.STARTED, setup_state)
-        trainer.add_event_handler(Events.EPOCH_COMPLETED(every=2), save_state)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_train_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED(every=50), save_state)
 
         #GpuInfo().attach(trainer, name='gpu')
         #pbar = ProgressBar()
@@ -272,7 +276,7 @@ class AbstractImageClassificationModel(ABC):
         train_loader, validation_loader, test_loader = self.load_dataset()
 
         # kick off training...
-        trainer.run(train_loader, max_epochs=self.epochs)
+        trainer.run(train_loader, max_epochs=self.epochs + start_epoch)
 
         self.display_results(history)
 

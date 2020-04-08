@@ -113,7 +113,7 @@ class AbstractImageClassificationModel(ABC):
         test_accuracy_sum_bins = history['test_accuracy_sum_bins']
         test_accuracy_num_bins = history['test_accuracy_num_bins']
 
-        for i in range(self.epochs):
+        for i in range(len(loss)):
             plt.figure(figsize=(8, 16))
             plt.subplot(2, 1, 1)
             plt.plot(bin_boundaries, bin_boundaries)
@@ -263,7 +263,7 @@ class AbstractImageClassificationModel(ABC):
         trainer.add_event_handler(Events.STARTED, setup_state)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_train_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
-        trainer.add_event_handler(Events.EPOCH_COMPLETED(every=50), save_state)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), save_state)
 
         #GpuInfo().attach(trainer, name='gpu')
         #pbar = ProgressBar()

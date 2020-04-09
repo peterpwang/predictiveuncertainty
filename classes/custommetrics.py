@@ -149,10 +149,10 @@ class CorrectCrossEntropy(Metric):
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = F.cross_entropy(y_pred, y, reduction='sum')
-            #y_pred = F.log_softmax(y_pred, dim=1)
-            #entropy = F.nll_loss(y_pred, y, reduction='sum')
-            self._sum_cross_entropy += entropy
+            y = F.one_hot(y, y_pred.shape[1]).double()
+            pos_weight = torch.ones([y_pred.shape[1]]).cuda()
+            entropy = F.binary_cross_entropy_with_logits(y_pred, y, pos_weight=pos_weight)
+            self._sum_cross_entropy += entropy * y_pred.shape[0]
             self._count_cross_entropy += batch_size
 
     def compute(self):
@@ -184,13 +184,14 @@ class IncorrectCrossEntropy(Metric):
         y = y[mask]
 
         if len(y_pred) > 0:
-            entropy = F.cross_entropy(y_pred, y, reduction='sum')
-            #y_pred = F.log_softmax(y_pred, dim=1)
-            #entropy = F.nll_loss(y_pred, y, reduction='sum')
-            self._sum_cross_entropy += entropy
+            y = F.one_hot(y, y_pred.shape[1]).double()
+            pos_weight = torch.ones([y_pred.shape[1]]).cuda()
+            entropy = F.binary_cross_entropy_with_logits(y_pred, y, pos_weight=pos_weight)
+            self._sum_cross_entropy += entropy * y_pred.shape[0]
             self._count_cross_entropy += batch_size
 
     def compute(self):
+        #print(self._sum_cross_entropy, "/", self._count_cross_entropy)
         return self._sum_cross_entropy / self._count_cross_entropy
 
 

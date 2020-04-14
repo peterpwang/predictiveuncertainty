@@ -143,17 +143,18 @@ class CorrectCrossEntropy(Metric):
         y_pred, y = output
         batch_size = y_pred.shape[0]
 
-        indices = torch.argmax(F.softmax(y_pred, dim=1), dim=1)
-        mask = torch.eq(indices, y).view(-1)
+        y_pred = F.softmax(y_pred, dim=1)
+        mask = torch.eq(torch.argmax(y_pred, dim=1), y).view(-1)
         y_pred = y_pred[mask]
         y = y[mask]
 
         if len(y_pred) > 0:
             y = F.one_hot(y, y_pred.shape[1]).double()
-            pos_weight = torch.ones([y_pred.shape[1]]).cuda()
-            entropy = F.binary_cross_entropy_with_logits(y_pred, y, pos_weight=pos_weight)
-            self._sum_cross_entropy += entropy * y_pred.shape[0]
-            self._count_cross_entropy += batch_size
+            y_pred = y * y_pred
+            entropy = -y_pred * torch.log(y_pred)
+            entropy[entropy!=entropy] = 0
+            self._sum_cross_entropy += torch.sum(entropy)
+            self._count_cross_entropy += len(y_pred)
 
     def compute(self):
         return self._sum_cross_entropy / self._count_cross_entropy
@@ -178,17 +179,18 @@ class IncorrectCrossEntropy(Metric):
         y_pred, y = output
         batch_size = y_pred.shape[0]
 
-        indices = torch.argmax(F.softmax(y_pred, dim=1), dim=1)
-        mask = torch.ne(indices, y).view(-1)
+        y_pred = F.softmax(y_pred, dim=1)
+        mask = torch.ne(torch.argmax(y_pred, dim=1), y).view(-1)
         y_pred = y_pred[mask]
         y = y[mask]
 
         if len(y_pred) > 0:
             y = F.one_hot(y, y_pred.shape[1]).double()
-            pos_weight = torch.ones([y_pred.shape[1]]).cuda()
-            entropy = F.binary_cross_entropy_with_logits(y_pred, y, pos_weight=pos_weight)
-            self._sum_cross_entropy += entropy * y_pred.shape[0]
-            self._count_cross_entropy += batch_size
+            y_pred = y * y_pred
+            entropy = -y_pred * torch.log(y_pred)
+            entropy[entropy!=entropy] = 0
+            self._sum_cross_entropy += torch.sum(entropy)
+            self._count_cross_entropy += len(y_pred)
 
     def compute(self):
         #print(self._sum_cross_entropy, "/", self._count_cross_entropy)

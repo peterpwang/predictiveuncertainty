@@ -32,7 +32,7 @@ class NLL(Metric):
         batch_size = y_pred.shape[0]
 
         y_pred = F.softmax(y_pred, dim=1)
-        y_pred = y_pred[range(y.shape[0]), y]
+        y_pred = y_pred[range(y_pred.shape[0]), y]
         nll = -torch.log(y_pred).sum().item()
 
         self._sum_nll += nll
@@ -72,7 +72,7 @@ class CorrectNLL(Metric):
 
         if len(y_pred) > 0:
             y_pred = F.softmax(y_pred, dim=1)
-            y_pred = y_pred[range(y.shape[0]), y]
+            y_pred = y_pred[range(y_pred.shape[0]), y]
             nll = -torch.log(y_pred).sum().item()
             self._sum_nll += nll
             self._count_nll += batch_size
@@ -111,7 +111,7 @@ class IncorrectNLL(Metric):
 
         if len(y_pred) > 0:
             y_pred = F.softmax(y_pred, dim=1)
-            y_pred = y_pred[range(y.shape[0]), y]
+            y_pred = y_pred[range(y_pred.shape[0]), y]
             nll = -torch.log(y_pred).sum().item()
             self._sum_nll += nll
             self._count_nll += batch_size
@@ -146,18 +146,17 @@ class CorrectCrossEntropy(Metric):
         y_pred = F.softmax(y_pred, dim=1)
         mask = torch.eq(torch.argmax(y_pred, dim=1), y).view(-1)
         y_pred = y_pred[mask]
-        y = y[mask]
 
         if len(y_pred) > 0:
-            y = F.one_hot(y, y_pred.shape[1]).double()
-            y_pred = y * y_pred
             entropy = -y_pred * torch.log(y_pred)
-            entropy[entropy!=entropy] = 0
-            self._sum_cross_entropy += torch.sum(entropy)
-            self._count_cross_entropy += len(y_pred)
+            self._sum_cross_entropy += torch.sum(entropy).item()
+            self._count_cross_entropy += batch_size
 
     def compute(self):
-        return self._sum_cross_entropy / self._count_cross_entropy
+        if self._count_cross_entropy== 0:
+            return 0.0
+        else:
+            return self._sum_cross_entropy / self._count_cross_entropy
 
 
 # Incorrect Entropy
@@ -182,19 +181,17 @@ class IncorrectCrossEntropy(Metric):
         y_pred = F.softmax(y_pred, dim=1)
         mask = torch.ne(torch.argmax(y_pred, dim=1), y).view(-1)
         y_pred = y_pred[mask]
-        y = y[mask]
 
         if len(y_pred) > 0:
-            y = F.one_hot(y, y_pred.shape[1]).double()
-            y_pred = y * y_pred
             entropy = -y_pred * torch.log(y_pred)
-            entropy[entropy!=entropy] = 0
-            self._sum_cross_entropy += torch.sum(entropy)
-            self._count_cross_entropy += len(y_pred)
+            self._sum_cross_entropy += torch.sum(entropy).item()
+            self._count_cross_entropy += batch_size
 
     def compute(self):
-        #print(self._sum_cross_entropy, "/", self._count_cross_entropy)
-        return self._sum_cross_entropy / self._count_cross_entropy
+        if self._count_cross_entropy== 0:
+            return 0.0
+        else:
+            return self._sum_cross_entropy / self._count_cross_entropy
 
 
 # ECE & histogram

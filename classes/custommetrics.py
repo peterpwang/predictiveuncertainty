@@ -12,6 +12,8 @@ from ignite.metrics.metric import sync_all_reduce, reinit__is_reduced
 # y_pred: (64*classes) [-0.4012, -1.4351,  0.1430,  1.4880,  0.0253,  1.8506, -1.3660,  0.7904, -0.6024, -1.4305],...
 # y: (64) [7, 8, 8, 8, 0, ...]
 
+epsilon = 1e-7
+
 # NLL(loss)
 class NLL(Metric):
 
@@ -32,7 +34,7 @@ class NLL(Metric):
         batch_size = y_pred.shape[0]
 
         y_pred = F.softmax(y_pred, dim=1)
-        y_pred = y_pred[range(y_pred.shape[0]), y]
+        y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
         nll = -torch.log(y_pred).sum().item()
 
         self._sum_nll += nll
@@ -72,7 +74,7 @@ class CorrectNLL(Metric):
 
         if len(y_pred) > 0:
             y_pred = F.softmax(y_pred, dim=1)
-            y_pred = y_pred[range(y_pred.shape[0]), y]
+            y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
             nll = -torch.log(y_pred).sum().item()
             self._sum_nll += nll
             self._count_nll += batch_size
@@ -111,7 +113,7 @@ class IncorrectNLL(Metric):
 
         if len(y_pred) > 0:
             y_pred = F.softmax(y_pred, dim=1)
-            y_pred = y_pred[range(y_pred.shape[0]), y]
+            y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
             nll = -torch.log(y_pred).sum().item()
             self._sum_nll += nll
             self._count_nll += batch_size
@@ -148,7 +150,7 @@ class CorrectCrossEntropy(Metric):
         y_pred = y_pred[mask]
 
         if len(y_pred) > 0:
-            entropy = -y_pred * torch.log(y_pred)
+            entropy = -y_pred * torch.log(y_pred + epsilon)
             self._sum_cross_entropy += torch.sum(entropy).item()
             self._count_cross_entropy += batch_size
 
@@ -183,7 +185,7 @@ class IncorrectCrossEntropy(Metric):
         y_pred = y_pred[mask]
 
         if len(y_pred) > 0:
-            entropy = -y_pred * torch.log(y_pred)
+            entropy = -y_pred * torch.log(y_pred + epsilon)
             self._sum_cross_entropy += torch.sum(entropy).item()
             self._count_cross_entropy += batch_size
 

@@ -79,7 +79,7 @@ class AbstractImageClassificationModel(ABC):
         plt.plot(epochs_range, nll, label='Train NLL')
         plt.plot(epochs_range, correct_entropy, label='Train Entropy correct')
         plt.plot(epochs_range, incorrect_entropy, label='Train Entropy incorrect')
-        plt.legend(loc='lower right')
+        plt.legend(loc='upper right')
         plt.title('Train NLL & Entropy')
 
         plt.subplot(2, 2, 2)
@@ -101,7 +101,7 @@ class AbstractImageClassificationModel(ABC):
         plt.subplot(2, 2, 4)
         plt.plot(epochs_range, acc, label='Train accuracy')
         plt.plot(epochs_range, test_acc, label='Test accuracy')
-        plt.legend(loc='upper right')
+        plt.legend(loc='lower right')
         plt.title('Train and Test accuracy')
 
         plt.savefig('results/result.png')
@@ -118,12 +118,12 @@ class AbstractImageClassificationModel(ABC):
             plt.subplot(2, 1, 1)
             plt.plot(bin_boundaries, bin_boundaries)
             plt.bar(bin_boundaries, test_accuracy_sum_bins[i], width=0.015, label='Test Accuracy')
-            plt.legend(loc='upper right')
+            plt.legend(loc='upper left')
             plt.title('Reliability Plot')
     
             plt.subplot(2, 1, 2)
             plt.bar(bin_boundaries, test_accuracy_num_bins[i], width=0.015, label='Test Samples')
-            plt.legend(loc='upper right')
+            plt.legend(loc='upper left')
             plt.title('Reliability Plot')
 
             plt.savefig('results/reliability_plot_' + '{:03d}'.format(i+1) + '.png')

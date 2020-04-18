@@ -53,7 +53,7 @@ class AbstractImageClassificationModel(ABC):
         return optimizer, criterion
 
     # Display test result
-    def display_results(self, history):
+    def output_results(self, history):
         loss = history['loss']
         test_loss = history['test_loss']
         acc = history['accuracy']
@@ -72,6 +72,7 @@ class AbstractImageClassificationModel(ABC):
 
         epochs_range = range(len(loss))
 
+        # output to plot
         plt.figure(figsize=(16, 16))
         plt.subplot(2, 2, 1)
         plt.plot(epochs_range, correct_nll, label='Train NLL correct')
@@ -104,8 +105,25 @@ class AbstractImageClassificationModel(ABC):
         plt.legend(loc='lower right')
         plt.title('Train and Test accuracy')
 
-        plt.savefig('results/result.png')
+        plt.savefig('results/' + type(self).__name__ + '_result.png')
         plt.close()
+
+        # Output to tsv
+        tsv_file = open('results/' + type(self).__name__ + '_result.tsv', 'w+')
+        tsv_file.write('Train NLL,Train NLL Correct,Train NLL Incorrect,'
+                + 'Train CE Correct,Train CE Incorrect,'
+                + 'Test NLL,Test NLL Correct,Test NLL Incorrect,'
+                + 'Test CE Correct,Test CE Incorrect,'
+                + 'Train Error,Test Error,Test ECE,'
+                + 'Train Accuracy,Test Accuracy\n')
+        for i in range(len(loss)):
+            tsv_file.write('{:6.2f}'.format(nll[i]) + ',' + '{:6.2f}'.format(correct_nll[i]) + ',' + '{:6.2f}'.format(incorrect_nll[i]) + ',')
+            tsv_file.write('{:6.2f}'.format(correct_entropy[i]) + ',' + '{:6.2f}'.format(incorrect_entropy[i]) + ',') 
+            tsv_file.write('{:6.2f}'.format(test_nll[i]) + ',' + '{:6.2f}'.format(test_correct_nll[i]) + ',' + '{:6.2f}'.format(test_incorrect_nll[i]) + ',')
+            tsv_file.write('{:6.2f}'.format(test_correct_entropy[i]) + ',' + '{:6.2f}'.format(test_incorrect_entropy[i]) +',') 
+            tsv_file.write('{:6.2f}'.format(loss[i]) + ',' + '{:6.2f}'.format(test_loss[i]) + ',' + '{:6.2f}'.format(test_ece[i]) + ',') 
+            tsv_file.write('{:6.2f}'.format(acc[i]) + ',' + '{:6.2f}'.format(test_acc[i]) + '\n') 
+        tsv_file.close()
 
         # Reliability plot
         bin_boundaries = np.linspace(0, 1, bins)
@@ -126,7 +144,7 @@ class AbstractImageClassificationModel(ABC):
             plt.legend(loc='upper left')
             plt.title('Reliability Plot')
 
-            plt.savefig('results/reliability_plot_' + '{:03d}'.format(i+1) + '.png')
+            plt.savefig('results/' + type(self).__name__ + '_reliability_plot_' + '{:03d}'.format(i+1) + '.png')
             
             plt.close()
         
@@ -278,5 +296,5 @@ class AbstractImageClassificationModel(ABC):
         # kick off training...
         trainer.run(train_loader, max_epochs=self.epochs + start_epoch)
 
-        self.display_results(history)
+        self.output_results(history)
 

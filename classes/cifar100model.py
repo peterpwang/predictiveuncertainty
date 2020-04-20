@@ -62,3 +62,11 @@ class Resnet50CIFAR100Model(AbstractCIFAR100ImageClassificationModel):
     def define_model(self):
         return torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False).cuda()
 
+
+# Densenet121 Cifar 100 model
+class Densenet121CIFAR100Model(AbstractCIFAR100ImageClassificationModel):
+    
+    # Set model
+    def define_model(self):
+        return torch.hub.load('pytorch/vision:v0.4.2', 'densenet121', pretrained=False).cuda()
+

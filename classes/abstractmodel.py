@@ -33,6 +33,7 @@ class AbstractImageClassificationModel(ABC):
         self.num_classes = args.num_classes
         self.batch_size = args.batch_size
         self.learning_rate = args.lr
+        self.focal_gamma = args.focal_gamma
         self.resume = args.resume
 
     # Load dataset and split into training and test sets.

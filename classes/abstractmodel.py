@@ -284,9 +284,9 @@ class AbstractImageClassificationModel(ABC):
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), save_state)
 
-        GpuInfo().attach(trainer, name='gpu')
-        pbar = ProgressBar()
-        pbar.attach(trainer, metric_names=['gpu:0 mem(%)', 'gpu:0 util(%)'])
+        #GpuInfo().attach(trainer, name='gpu')
+        #pbar = ProgressBar()
+        #pbar.attach(trainer, metric_names=['gpu:0 mem(%)', 'gpu:0 util(%)'])
 
         # Track loss during epoch and print out in progress bar
         #RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')

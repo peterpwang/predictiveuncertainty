@@ -16,6 +16,8 @@ if __name__ == "__main__":
                         help='batch size (default 128)')
     parser.add_argument('--lr', default=0.1, type=float, 
                         help='learning rate (default 0.1)')
+    parser.add_argument('--focal_gamma', default=2.0, type=float, 
+                        help='focal gamma (default 2.0)')
     parser.add_argument('--resume', action='store_true', 
                         help='resume from checkpoint')
     args = parser.parse_args()

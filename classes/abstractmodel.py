@@ -121,8 +121,14 @@ class AbstractImageClassificationModel(ABC):
             plt.legend(loc='upper left')
             plt.title('Reliability Plot')
     
+            # Calculate sample %
+            count_samples = 0.0
+            for j in range(test_accuracy_num_bins[i]):
+                count_samples += test_accuracy_num_bins[i][j]
+
             plt.subplot(2, 1, 2)
-            plt.bar(bin_boundaries, test_accuracy_num_bins[i], width=0.015, label='Test Samples')
+            plt.plot(bin_boundaries, bin_boundaries)
+            plt.bar(bin_boundaries, test_accuracy_num_bins[i]/count_samples, width=0.015, label='Test Samples')
             plt.legend(loc='upper left')
             plt.title('Reliability Plot')
 

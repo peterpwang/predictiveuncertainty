@@ -22,5 +22,5 @@ if __name__ == "__main__":
                         help='resume from checkpoint')
     args = parser.parse_args()
 
-    model = cifar10model.Resnet50CIFAR10Model(args)
+    model = cifar10model.Densenet121CIFAR10Model(args)
     model.run()

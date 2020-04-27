@@ -33,6 +33,7 @@ class AbstractImageClassificationModel(ABC):
         self.num_classes = args.num_classes
         self.batch_size = args.batch_size
         self.learning_rate = args.lr
+        self.focal_gamma = args.focal_gamma
         self.resume = args.resume
 
     # Load dataset and split into training and test sets.
@@ -53,7 +54,7 @@ class AbstractImageClassificationModel(ABC):
         return optimizer, criterion
 
     # Display test result
-    def display_results(self, history):
+    def output_results(self, history):
         loss = history['loss']
         test_loss = history['test_loss']
         acc = history['accuracy']
@@ -72,6 +73,7 @@ class AbstractImageClassificationModel(ABC):
 
         epochs_range = range(len(loss))
 
+        # output to plot
         plt.figure(figsize=(16, 16))
         plt.subplot(2, 2, 1)
         plt.plot(epochs_range, correct_nll, label='Train NLL correct')
@@ -104,8 +106,25 @@ class AbstractImageClassificationModel(ABC):
         plt.legend(loc='lower right')
         plt.title('Train and Test accuracy')
 
-        plt.savefig('results/result.png')
+        plt.savefig('results/' + type(self).__name__ + '_result.png')
         plt.close()
+
+        # Output to tsv
+        tsv_file = open('results/' + type(self).__name__ + '_result.tsv', 'w+')
+        tsv_file.write('Train NLL,Train NLL Correct,Train NLL Incorrect,'
+                + 'Train CE Correct,Train CE Incorrect,'
+                + 'Test NLL,Test NLL Correct,Test NLL Incorrect,'
+                + 'Test CE Correct,Test CE Incorrect,'
+                + 'Train Error,Test Error,Test ECE,'
+                + 'Train Accuracy,Test Accuracy\n')
+        for i in range(len(loss)):
+            tsv_file.write('{:6.2f}'.format(nll[i]) + ',' + '{:6.2f}'.format(correct_nll[i]) + ',' + '{:6.2f}'.format(incorrect_nll[i]) + ',')
+            tsv_file.write('{:6.2f}'.format(correct_entropy[i]) + ',' + '{:6.2f}'.format(incorrect_entropy[i]) + ',') 
+            tsv_file.write('{:6.2f}'.format(test_nll[i]) + ',' + '{:6.2f}'.format(test_correct_nll[i]) + ',' + '{:6.2f}'.format(test_incorrect_nll[i]) + ',')
+            tsv_file.write('{:6.2f}'.format(test_correct_entropy[i]) + ',' + '{:6.2f}'.format(test_incorrect_entropy[i]) +',') 
+            tsv_file.write('{:6.2f}'.format(loss[i]) + ',' + '{:6.2f}'.format(test_loss[i]) + ',' + '{:6.2f}'.format(test_ece[i]) + ',') 
+            tsv_file.write('{:6.2f}'.format(acc[i]) + ',' + '{:6.2f}'.format(test_acc[i]) + '\n') 
+        tsv_file.close()
 
         # Reliability plot
         bin_boundaries = np.linspace(0, 1, bins)
@@ -132,7 +151,7 @@ class AbstractImageClassificationModel(ABC):
             plt.legend(loc='upper left')
             plt.title('Reliability Plot')
 
-            plt.savefig('results/reliability_plot_' + '{:03d}'.format(i+1) + '.png')
+            plt.savefig('results/' + type(self).__name__ + '_reliability_plot_' + '{:03d}'.format(i+1) + '.png')
             
             plt.close()
         
@@ -271,9 +290,9 @@ class AbstractImageClassificationModel(ABC):
         trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
         trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), save_state)
 
-        GpuInfo().attach(trainer, name='gpu')
-        pbar = ProgressBar()
-        pbar.attach(trainer, metric_names=['gpu:0 mem(%)', 'gpu:0 util(%)'])
+        #GpuInfo().attach(trainer, name='gpu')
+        #pbar = ProgressBar()
+        #pbar.attach(trainer, metric_names=['gpu:0 mem(%)', 'gpu:0 util(%)'])
 
         # Track loss during epoch and print out in progress bar
         #RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')
@@ -284,5 +303,5 @@ class AbstractImageClassificationModel(ABC):
         # kick off training...
         trainer.run(train_loader, max_epochs=self.epochs + start_epoch)
 
-        self.display_results(history)
+        self.output_results(history)
 

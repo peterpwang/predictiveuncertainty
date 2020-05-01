@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
+from efficientnet_pytorch import EfficientNet
 
 
 # Abstract Cifar 10 model
@@ -98,4 +99,12 @@ class Densenet121CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     # Set model
     def define_model(self):
         return torch.hub.load('pytorch/vision:v0.4.2', 'densenet121', pretrained=False).cuda()
+
+
+# EfficientNet B0 Cifar 10 model
+class EfficientNetB0CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
+    
+    # Set model
+    def define_model(self):
+        return EfficientNet.from_name('efficientnet-b0').cuda()
 

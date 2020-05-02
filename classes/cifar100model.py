@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
+from efficientnet_pytorch import EfficientNet
 
 
 # Abstract Cifar 100 model

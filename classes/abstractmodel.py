@@ -163,7 +163,7 @@ class AbstractImageClassificationModel(ABC):
             'start_epoch': trainer.state.epoch,
             'history': history
         }
-        torch.save(state, './checkpoints/checkpoint.bin')
+        torch.save(state, './checkpoints/' + type(self).__name__ + '_checkpoint.bin')
         #print("Checkpoint saved.")
         
 

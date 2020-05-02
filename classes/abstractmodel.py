@@ -168,7 +168,7 @@ class AbstractImageClassificationModel(ABC):
         
 
     def load_checkpoint(self, net, optimizer, history):
-        checkpoint = torch.load('./checkpoints/checkpoint.bin')
+        checkpoint = torch.load('./checkpoints/' + type(self).__name__ + '_checkpoint.bin')
         net.load_state_dict(checkpoint['net'])
         optimizer = checkpoint['optimizer']
         start_epoch = checkpoint['start_epoch']

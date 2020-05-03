@@ -15,16 +15,16 @@ class AbstractCIFAR100ImageClassificationModel(AbstractImageClassificationModel)
     # Load dataset and split into training and test sets.
     def load_dataset(self):
         train_transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            #transforms.Resize(256),
+            #transforms.CenterCrop(224),
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
         test_transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
 
         dataset = torchvision.datasets.CIFAR100(root='./data', train=True,

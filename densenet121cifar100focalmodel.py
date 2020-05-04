@@ -1,4 +1,4 @@
-from classes import abstractmodel, cifar100model
+from classes import abstractmodel, cifar100focalmodel
 import torch.multiprocessing as mp
 
 import argparse
@@ -22,5 +22,5 @@ if __name__ == "__main__":
                         help='resume from checkpoint')
     args = parser.parse_args()
 
-    model = cifar100model.Resnet50CIFAR100Model(args)
+    model = cifar100focalmodel.Densenet121CIFAR100FocalModel(args)
     model.run()

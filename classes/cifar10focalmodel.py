@@ -90,7 +90,7 @@ class Resnet50CIFAR10FocalModel(AbstractCIFAR10FocalModel):
 
 
 # Densenet121 Cifar model
-class Densenet121FocalModel(AbstractCIFAR10FocalModel):
+class Densenet121CIFAR10FocalModel(AbstractCIFAR10FocalModel):
     
     # Set model
     def define_model(self):

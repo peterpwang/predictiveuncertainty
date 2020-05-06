@@ -123,7 +123,7 @@ class EfficientNetB5CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
 
 
 # EfficientNet B8 Cifar 10 model
-class EfficientNetB0CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
+class EfficientNetB8CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):

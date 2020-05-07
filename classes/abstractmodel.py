@@ -71,7 +71,13 @@ class AbstractImageClassificationModel(ABC):
         incorrect_entropy = history['incorrect_entropy']
         test_incorrect_entropy = history['test_incorrect_entropy']
 
+        # Calculate errors
         epochs_range = range(len(loss))
+        error = []
+        test_error = []
+        for i in range(len(loss)):
+            error.append(1 - acc[i])
+            test_error.append(1 - test_acc[i])
 
         # output to plot
         plt.figure(figsize=(16, 16))
@@ -94,8 +100,8 @@ class AbstractImageClassificationModel(ABC):
         plt.title('Test NLL & Entropy')
 
         plt.subplot(2, 2, 3)
-        plt.plot(epochs_range, loss, label='Train classfication error')
-        plt.plot(epochs_range, test_loss, label='Test classfication error')
+        plt.plot(epochs_range, error, label='Train classfication error')
+        plt.plot(epochs_range, test_error, label='Test classfication error')
         plt.plot(epochs_range, test_ece, label='Test ECE')
         plt.legend(loc='upper right')
         plt.title('Test Error')

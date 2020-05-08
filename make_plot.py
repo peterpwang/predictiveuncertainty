@@ -5,7 +5,13 @@ import sys
 if __name__ == "__main__":
     cvsfile_name = sys.argv[1]
     x=[]
-    y=[]
+    y1=[]
+    y2=[]
+    y3=[]
+    y4=[]
+    y5=[]
+    y6=[]
+    y7=[]
 
     with open(cvsfile_name, 'r') as csvfile:
         plots= csv.reader(csvfile, delimiter=',')
@@ -14,17 +20,30 @@ if __name__ == "__main__":
         i = 0
         for row in plots:
             x.append(i)
-            y.append(float(row[0]))
+            y1.append(float(row[0]))
+            y2.append(float(row[1]))
+            y3.append(float(row[2]))
+            y4.append(float(row[3]))
+            y5.append(float(row[4]))
+            y6.append(float(row[5]))
+            y7.append(float(row[6]))
             i += 1
 
 
-    plt.plot(x, y, label='NLL')
+    plt.plot(x, y1, label='Resnet50')
+    plt.plot(x, y2, label='Resnet50 (FL γ=1)')
+    plt.plot(x, y3, label='Resnet50 (FL γ=2)')
+    plt.plot(x, y4, label='Resnet50 (FL γ=3)')
+    plt.plot(x, y5, label='Densenet121')
+    plt.plot(x, y6, label='Densenet121 (FL γ=1)')
+    plt.plot(x, y7, label='EfficientNet B0')
 
-    plt.title('NLL')
+    plt.title(sys.argv[2])
+    plt.legend(loc='upper right')
 
     plt.xlabel('Epoch')
-    plt.ylabel('NLL')
+    plt.ylabel(sys.argv[2])
 
-    plt.savefig('results/NLL.png')
+    plt.savefig('results/' + sys.argv[2] + '.png')
     plt.close()
 

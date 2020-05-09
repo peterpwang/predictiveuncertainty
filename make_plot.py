@@ -4,6 +4,9 @@ import sys
 
 if __name__ == "__main__":
     cvsfile_name = sys.argv[1]
+    title = sys.argv[2]
+    legend_position = sys.argv[3]
+
     x=[]
     y1=[]
     y2=[]
@@ -38,12 +41,12 @@ if __name__ == "__main__":
     plt.plot(x, y6, label='Densenet121 (FL γ=1)')
     plt.plot(x, y7, label='EfficientNet B0')
 
-    plt.title(sys.argv[2])
-    plt.legend(loc='upper right')
+    plt.title(title)
+    plt.legend(loc=legend_position)
 
     plt.xlabel('Epoch')
-    plt.ylabel(sys.argv[2])
+    plt.ylabel(title)
 
-    plt.savefig('results/' + sys.argv[2] + '.png')
+    plt.savefig('results/' + title + '.png')
     plt.close()
 

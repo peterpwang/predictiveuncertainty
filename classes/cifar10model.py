@@ -122,6 +122,14 @@ class EfficientNetB5CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
         return EfficientNet.from_name('efficientnet-b5').cuda()
 
 
+# EfficientNet B7 Cifar 10 model
+class EfficientNetB7CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
+    
+    # Set model
+    def define_model(self):
+        return EfficientNet.from_name('efficientnet-b7').cuda()
+
+
 # EfficientNet B8 Cifar 10 model
 class EfficientNetB8CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     

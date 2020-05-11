@@ -39,7 +39,7 @@ if __name__ == "__main__":
     #plt.plot(x, y4, label='Resnet50 (FL γ=3)')
     plt.plot(x, y3, label='Densenet121')
     plt.plot(x, y4, label='Densenet121 (FL γ=1)')
-    plt.plot(x, y7, label='EfficientNet B0')
+    plt.plot(x, y5, label='EfficientNet B0')
 
     plt.title(title)
     plt.legend(loc=legend_position)

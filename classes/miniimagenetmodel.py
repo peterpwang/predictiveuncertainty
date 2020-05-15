@@ -9,6 +9,7 @@ import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.datasets.vision import VisionDataset
+from efficientnet_pytorch import EfficientNet
 from PIL import Image
 
 

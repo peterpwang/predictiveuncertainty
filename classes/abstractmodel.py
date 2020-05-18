@@ -199,6 +199,9 @@ class AbstractImageClassificationModel(ABC):
         if not os.path.isdir('results'):
             os.mkdir('results')
 
+        # Load dataset
+        train_loader, validation_loader, test_loader = self.load_dataset()
+
         # Create model
         net = self.define_model()
         optimizer, criterion = self.compile_model(net)
@@ -302,9 +305,6 @@ class AbstractImageClassificationModel(ABC):
 
         # Track loss during epoch and print out in progress bar
         #RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')
-
-        # Load dataset
-        train_loader, validation_loader, test_loader = self.load_dataset()
 
         # kick off training...
         trainer.run(train_loader, max_epochs=self.epochs + start_epoch)

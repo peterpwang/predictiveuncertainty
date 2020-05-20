@@ -13,8 +13,8 @@ if __name__ == "__main__":
     y3=[]
     y4=[]
     y5=[]
-    #y6=[]
-    #y7=[]
+    y6=[]
+    y7=[]
 
     with open(cvsfile_name, 'r') as csvfile:
         plots= csv.reader(csvfile, delimiter=',')
@@ -28,18 +28,18 @@ if __name__ == "__main__":
             y3.append(float(row[2]))
             y4.append(float(row[3]))
             y5.append(float(row[4]))
-            #y6.append(float(row[5]))
-            #y7.append(float(row[6]))
+            y6.append(float(row[5]))
+            y7.append(float(row[6]))
             i += 1
 
 
     plt.plot(x, y1, label='Resnet50')
     plt.plot(x, y2, label='Resnet50 (FL γ=1)')
-    #plt.plot(x, y3, label='Resnet50 (FL γ=2)')
-    #plt.plot(x, y4, label='Resnet50 (FL γ=3)')
     plt.plot(x, y3, label='Densenet121')
     plt.plot(x, y4, label='Densenet121 (FL γ=1)')
     plt.plot(x, y5, label='EfficientNet B0')
+    plt.plot(x, y6, label='EfficientNet B2')
+    plt.plot(x, y7, label='EfficientNet B7')
 
     plt.title(title)
     plt.legend(loc=legend_position)

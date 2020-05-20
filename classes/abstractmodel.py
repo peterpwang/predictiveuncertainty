@@ -132,34 +132,60 @@ class AbstractImageClassificationModel(ABC):
             tsv_file.write('{:6.2f}'.format(acc[i]) + ',' + '{:6.2f}'.format(test_acc[i]) + '\n') 
         tsv_file.close()
 
-        # Reliability plot
+        # Reliability plot (only the last epoch)
         bin_boundaries = np.linspace(0, 1, bins)
 
         test_accuracy_sum_bins = history['test_accuracy_sum_bins']
         test_accuracy_num_bins = history['test_accuracy_num_bins']
 
-        for i in range(len(loss)):
-            plt.figure(figsize=(8, 16))
-            plt.subplot(2, 1, 1)
-            plt.plot(bin_boundaries, bin_boundaries)
-            plt.bar(bin_boundaries, test_accuracy_sum_bins[i], width=0.015, label='Test Accuracy')
-            plt.legend(loc='upper left')
-            plt.title('Reliability Plot')
+        i = len(loss) - 1
+        plt.figure(figsize=(8, 16))
+        plt.subplot(2, 1, 1)
+        plt.plot(bin_boundaries, bin_boundaries)
+        plt.bar(bin_boundaries, test_accuracy_sum_bins[i], width=0.015, label='Test Accuracy')
+        plt.legend(loc='upper left')
+        plt.title('Reliability Plot')
     
+        # Calculate sample %
+        count_samples = 0.0
+        for j in range(len(test_accuracy_num_bins[i])):
+            count_samples += test_accuracy_num_bins[i][j]
+
+        plt.subplot(2, 1, 2)
+        plt.plot(bin_boundaries, bin_boundaries)
+        plt.bar(bin_boundaries, test_accuracy_num_bins[i]/count_samples, width=0.015, label='Test Sample Percentage')
+        plt.legend(loc='upper left')
+        plt.title('Reliability Plot')
+        plt.savefig('results/' + type(self).__name__ + '_reliability_plot_' + '{:03d}'.format(i+1) + '.png')
+        plt.close()
+
+        # Output to tsv
+        rp_file = open('results/' + type(self).__name__ + '_rp.tsv', 'w+')
+        sample_file = open('results/' + type(self).__name__ + '_sample.tsv', 'w+')
+        for i in range(len(loss)):
+
             # Calculate sample %
             count_samples = 0.0
             for j in range(len(test_accuracy_num_bins[i])):
                 count_samples += test_accuracy_num_bins[i][j]
+                
+            for j in range(len(test_accuracy_num_bins[i])):
 
-            plt.subplot(2, 1, 2)
-            plt.plot(bin_boundaries, bin_boundaries)
-            plt.bar(bin_boundaries, test_accuracy_num_bins[i]/count_samples, width=0.015, label='Test Sample Percentage')
-            plt.legend(loc='upper left')
-            plt.title('Reliability Plot')
+                # Write reliability plot
+                rp_file.write('{:6.2f}'.format(test_accuracy_sum_bins[i][j]))
+                if j<len(test_accuracy_num_bins[i])-1:
+                    rp_file.write(',') 
 
-            plt.savefig('results/' + type(self).__name__ + '_reliability_plot_' + '{:03d}'.format(i+1) + '.png')
-            
-            plt.close()
+                # Write sample plot
+                sample_file.write('{:6.2f}'.format(test_accuracy_num_bins[i][j]/count_samples))
+                if j<len(test_accuracy_num_bins[i])-1:
+                    sample_file.write(',') 
+
+            rp_file.write('\n') 
+            sample_file.write('\n') 
+
+        rp_file.close()
+        sample_file.close()
         
 
     def save_checkpoint(self, trainer, net, optimizer, start_epoch, history):

@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from torchvision.datasets.vision import VisionDataset
 from efficientnet_pytorch import EfficientNet
 from PIL import Image
+import geffnet
 
 
 # Abstract Mini Imagenet model
@@ -70,7 +71,8 @@ class EfficientNetB0MiniImagenetModel(AbstractMiniImagenetImageClassificationMod
     
     # Set model
     def define_model(self):
-        return EfficientNet.from_name('efficientnet-b0').cuda()
+        #return EfficientNet.from_name('efficientnet-b0').cuda()
+        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
 # EfficientNet B2 Mini Imagenet model

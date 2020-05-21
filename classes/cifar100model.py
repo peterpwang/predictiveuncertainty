@@ -76,7 +76,7 @@ class EfficientNetB0CIFAR100Model(AbstractCIFAR100ImageClassificationModel):
     # Set model
     def define_model(self):
         #return EfficientNet.from_name('efficientnet-b0').cuda()
-        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2)
+        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
 # EfficientNet B2 Cifar 100 model

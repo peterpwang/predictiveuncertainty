@@ -6,7 +6,6 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
-from efficientnet_pytorch import EfficientNet
 import geffnet
 
 
@@ -104,8 +103,7 @@ class EfficientNetB0CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):
-        #return EfficientNet.from_name('efficientnet-b0').cuda()
-        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2)
+        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
 # EfficientNet B2 Cifar 10 model
@@ -113,8 +111,7 @@ class EfficientNetB2CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):
-        #return EfficientNet.from_name('efficientnet-b2').cuda()
-        return geffnet.efficientnet_b2(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2)
+        return geffnet.efficientnet_b2(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
 # EfficientNet B5 Cifar 10 model
@@ -122,7 +119,7 @@ class EfficientNetB5CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):
-        return EfficientNet.from_name('efficientnet-b5').cuda()
+        return geffnet.efficientnet_b5(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
 # EfficientNet B7 Cifar 10 model
@@ -130,13 +127,5 @@ class EfficientNetB7CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
     
     # Set model
     def define_model(self):
-        return EfficientNet.from_name('efficientnet-b7').cuda()
-
-
-# EfficientNet B8 Cifar 10 model
-class EfficientNetB8CIFAR10Model(AbstractCIFAR10ImageClassificationModel):
-    
-    # Set model
-    def define_model(self):
-        return EfficientNet.from_name('efficientnet-b8').cuda()
+        return geffnet.efficientnet_b7(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 

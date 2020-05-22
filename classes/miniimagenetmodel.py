@@ -71,7 +71,6 @@ class EfficientNetB0MiniImagenetModel(AbstractMiniImagenetImageClassificationMod
     
     # Set model
     def define_model(self):
-        #return EfficientNet.from_name('efficientnet-b0').cuda()
         return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
@@ -80,7 +79,6 @@ class EfficientNetB2MiniImagenetModel(AbstractMiniImagenetImageClassificationMod
     
     # Set model
     def define_model(self):
-        #return EfficientNet.from_name('efficientnet-b2').cuda()
         return geffnet.efficientnet_b2(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
@@ -89,7 +87,7 @@ class EfficientNetB5MiniImagenetModel(AbstractMiniImagenetImageClassificationMod
     
     # Set model
     def define_model(self):
-        return EfficientNet.from_name('efficientnet-b5').cuda()
+        return geffnet.efficientnet_b5(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
 # EfficientNet B7 Mini Imagenet model
@@ -97,13 +95,5 @@ class EfficientNetB7MiniImagenetModel(AbstractMiniImagenetImageClassificationMod
     
     # Set model
     def define_model(self):
-        return EfficientNet.from_name('efficientnet-b7').cuda()
-
-
-# EfficientNet B8 Mini Imagenet model
-class EfficientNetB8MiniImagenetModel(AbstractMiniImagenetImageClassificationModel):
-    
-    # Set model
-    def define_model(self):
-        return EfficientNet.from_name('efficientnet-b8').cuda()
+        return geffnet.efficientnet_b7(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 

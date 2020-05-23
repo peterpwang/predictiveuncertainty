@@ -35,6 +35,7 @@ class AbstractImageClassificationModel(ABC):
         self.learning_rate = args.lr
         self.focal_gamma = args.focal_gamma
         self.resume = args.resume
+        self.prepare_batch = None
 
     # Load dataset and split into training and test sets.
     @abstractmethod
@@ -261,11 +262,17 @@ class AbstractImageClassificationModel(ABC):
             'incorrect_entropy': IncorrectCrossEntropy(device=device),
             'ece': ECE(device=device)
         }
-
-        trainer = create_supervised_trainer(net, optimizer, criterion, device=device, non_blocking=True)
-        train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
-        validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
-        test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
+   
+        if self.prepare_batch == None:
+            trainer = create_supervised_trainer(net, optimizer, criterion, device=device, non_blocking=True)
+            train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
+            validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
+            test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
+        else:
+            trainer = create_supervised_trainer(net, optimizer, criterion, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+            train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+            validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+            test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
 
         def setup_state(trainer):
             trainer.state.epoch = start_epoch

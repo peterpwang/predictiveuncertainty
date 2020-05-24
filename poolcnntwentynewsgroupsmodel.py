@@ -22,5 +22,5 @@ if __name__ == "__main__":
                         help='resume from checkpoint')
     args = parser.parse_args()
 
-    testmodel = twentynewsgroupsmodel.TestTwentyNewsgroupsModel(args)
-    testmodel.run()
+    poolcnnmodel = twentynewsgroupsmodel.PoolCNNTwentyNewsgroupsModel(args)
+    poolcnnmodel.run()

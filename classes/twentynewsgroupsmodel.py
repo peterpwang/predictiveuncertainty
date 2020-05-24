@@ -97,11 +97,11 @@ def text_prepare_batch(batch, device=None, non_blocking=False):
             convert_tensor(y, device=device, non_blocking=non_blocking))
 
 
-# TextCNN model
-class TestNet(nn.Module):
+# PoolCNN model
+class PoolCNNNet(nn.Module):
     
     def __init__(self, text, vocab_size, embedding_dim, kernel_sizes, num_filters, num_classes, d_prob, mode):
-        super(TestNet, self).__init__()
+        super(PoolCNNNet, self).__init__()
         self.text = text
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
@@ -112,19 +112,27 @@ class TestNet(nn.Module):
         self.mode = mode
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=1)
         self.load_embeddings()
-        self.conv = nn.ModuleList([nn.Conv1d(in_channels=embedding_dim,
-                                             out_channels=num_filters,
-                                             kernel_size=k, stride=1) for k in kernel_sizes])
+        self.conv = nn.ModuleList([
+            nn.Conv2d(1, num_filters, [kernel_size, num_filters], padding=(kernel_size - 1, 0))
+                for kernel_size in kernel_sizes
+        ])
         self.dropout = nn.Dropout(d_prob)
         self.fc = nn.Linear(len(kernel_sizes) * num_filters, num_classes)
 
     def forward(self, x):
-        batch_size, sequence_length = x.shape
-        x = self.embedding(x).transpose(1, 2)
-        x = [F.relu(conv(x)) for conv in self.conv]
-        x = [F.max_pool1d(c, c.size(-1)).squeeze(dim=-1) for c in x]
-        x = torch.cat(x, dim=1)
-        x = self.fc(self.dropout(x))
+        x = self.embedding(x)
+        x = torch.unsqueeze(x, 1)
+
+        xs = []
+        for conv in self.conv:
+            x2 = F.relu(conv(x))        # [B, F, T, 1]
+            x2 = torch.squeeze(x2, -1)  # [B, F, T]
+            x2 = F.max_pool1d(x2, x2.size(2))  # [B, F, 1]
+            xs.append(x2)
+
+        x = torch.cat(xs, 2)
+        x = x.view(x.size(0), -1)
+        x = self.fc(self.dropout(x))  
         return torch.sigmoid(x).squeeze()
 
     def load_embeddings(self):
@@ -142,8 +150,8 @@ class TestNet(nn.Module):
             raise ValueError('Unexpected value of mode. Please choose from static, nonstatic, rand.')
 
 
-# Test 20 Newsgroups model
-class TestTwentyNewsgroupsModel(AbstractTwentyNewsGroupsTextClassificationModel):
+# Pool CNN on 20 Newsgroups model
+class PoolCNNTwentyNewsgroupsModel(AbstractTwentyNewsGroupsTextClassificationModel):
 
     # Set model
     def define_model(self):
@@ -151,7 +159,7 @@ class TestTwentyNewsgroupsModel(AbstractTwentyNewsGroupsTextClassificationModel)
         #define hyperparameters
         vocab_size, embedding_dim = self.TEXT.vocab.vectors.shape
 
-        model = TestNet(self.TEXT,
+        model = PoolCNNNet(self.TEXT,
                 vocab_size=vocab_size,
                 embedding_dim=embedding_dim,
                 kernel_sizes=[3, 4, 5],
@@ -161,3 +169,4 @@ class TestTwentyNewsgroupsModel(AbstractTwentyNewsGroupsTextClassificationModel)
                 mode='static')
 
         return model.cuda()
+

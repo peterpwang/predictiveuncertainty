@@ -1,4 +1,4 @@
-from .abstractmodel import AbstractImageClassificationModel
+from .abstractmodel import AbstractClassificationModel
 
 import torch
 import torch.nn as nn
@@ -7,7 +7,7 @@ import torch.optim as optim
 
 
 # Abstract focal model
-class AbstractFocalModel(AbstractImageClassificationModel):
+class AbstractFocalModel(AbstractClassificationModel):
     
     # compile model
     def compile_model(self, net):

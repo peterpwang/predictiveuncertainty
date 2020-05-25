@@ -1,4 +1,4 @@
-from .abstractmodel import AbstractImageClassificationModel
+from .abstractmodel import AbstractClassificationModel
 
 import os
 import random
@@ -17,7 +17,7 @@ torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 
 # Abstract 20 newsgroups model
-class AbstractTwentyNewsGroupsTextClassificationModel(AbstractImageClassificationModel):
+class AbstractTwentyNewsGroupsTextClassificationModel(AbstractClassificationModel):
 
     def __init__(self, args):
         super(AbstractTwentyNewsGroupsTextClassificationModel, self).__init__(args)

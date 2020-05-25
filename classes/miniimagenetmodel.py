@@ -1,4 +1,4 @@
-from .abstractmodel import AbstractImageClassificationModel
+from .abstractmodel import AbstractClassificationModel
 from .util import MiniImagenetDatasetFolder, make_mini_imagenet_dataset
 
 import os
@@ -15,7 +15,7 @@ import geffnet
 
 
 # Abstract Mini Imagenet model
-class AbstractMiniImagenetImageClassificationModel(AbstractImageClassificationModel):
+class AbstractMiniImagenetImageClassificationModel(AbstractClassificationModel):
 
     # Load dataset and split into training and test sets.
     def load_dataset(self):

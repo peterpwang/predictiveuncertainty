@@ -1,4 +1,4 @@
-from .abstractmodel import AbstractImageClassificationModel
+from .abstractmodel import AbstractClassificationModel
 
 import torch
 import torchvision
@@ -10,7 +10,7 @@ import geffnet
 
 
 # Abstract Cifar 100 model
-class AbstractCIFAR100ImageClassificationModel(AbstractImageClassificationModel):
+class AbstractCIFAR100ImageClassificationModel(AbstractClassificationModel):
 
     # Load dataset and split into training and test sets.
     def load_dataset(self):

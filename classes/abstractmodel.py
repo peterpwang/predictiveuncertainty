@@ -1,8 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import torch
-import torchvision
-import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -26,7 +24,7 @@ bins = 25
 device = "cuda"
 
 
-class AbstractImageClassificationModel(ABC):
+class AbstractClassificationModel(ABC):
     
     def __init__(self, args):
         self.epochs = args.epochs

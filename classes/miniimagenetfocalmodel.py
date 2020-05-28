@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.datasets.vision import VisionDataset
 from PIL import Image
+import geffnet
 
 
 # Abstract Mini Imagenet model
@@ -64,4 +65,11 @@ class Densenet121MiniImagenetFocalModel(AbstractMiniImagenetFocalModel):
     def define_model(self):
         return torch.hub.load('pytorch/vision:v0.4.2', 'densenet121', pretrained=False).cuda()
 
+
+# EfficientNet B0 Mini Imagenet model
+class EfficientNetB0MiniImagenetFocalModel(AbstractMiniImagenetFocalModel):
+    
+    # Set model
+    def define_model(self):
+        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 

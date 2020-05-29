@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
+import geffnet
 
 
 # Abstract Cifar 10 model
@@ -81,7 +82,7 @@ class TestCIFAR10FocalModel(AbstractCIFAR10FocalModel):
         return TestNet().cuda()
 
 
-# Resnet50 Cifar model
+# Resnet50 Cifar 10 model
 class Resnet50CIFAR10FocalModel(AbstractCIFAR10FocalModel):
     
     # Set model
@@ -89,11 +90,19 @@ class Resnet50CIFAR10FocalModel(AbstractCIFAR10FocalModel):
         return torch.hub.load('pytorch/vision:v0.4.2', 'resnet50', pretrained=False).cuda()
 
 
-# Densenet121 Cifar model
+# Densenet121 Cifar 10 model
 class Densenet121CIFAR10FocalModel(AbstractCIFAR10FocalModel):
     
     # Set model
     def define_model(self):
         return torch.hub.load('pytorch/vision:v0.4.2', 'densenet121', pretrained=False).cuda()
+
+
+# EfficientNet B0 Cifar 10 model
+class EfficientNetB0CIFAR10FocalModel(AbstractCIFAR10FocalModel):
+    
+    # Set model
+    def define_model(self):
+        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 

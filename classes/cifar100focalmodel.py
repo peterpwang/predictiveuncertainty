@@ -74,14 +74,13 @@ class EfficientNetB0CIFAR100FocalModel(AbstractCIFAR100FocalModel):
     
     # Set model
     def define_model(self):
+        return geffnet.efficientnet_b0(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
 
 
 # EfficientNet B7 Cifar 100 model
 class EfficientNetB7CIFAR100FocalModel(AbstractCIFAR100FocalModel):
-    
+
     # Set model
     def define_model(self):
         return geffnet.efficientnet_b7(pretrained=False, drop_rate=0.25, drop_connect_rate=0.2).cuda()
-
-
 

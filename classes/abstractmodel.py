@@ -208,6 +208,19 @@ class AbstractClassificationModel(ABC):
         return net, optimizer, start_epoch, history
         
 
+    def create_trainer(self, net, optimizer, criterion, metrics, device):
+        if self.prepare_batch == None:
+            trainer = create_supervised_trainer(net, optimizer, criterion, device=device, non_blocking=True)
+            train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
+            validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
+            test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
+        else:
+            trainer = create_supervised_trainer(net, optimizer, criterion, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+            train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+            validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+            test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+        return trainer, train_evaluator, validation_evaluator, test_evaluator
+    
     def run(self):
 
         #FORMAT = '%(asctime)-15s %(message)s'
@@ -261,16 +274,7 @@ class AbstractClassificationModel(ABC):
             'ece': ECE(device=device)
         }
    
-        if self.prepare_batch == None:
-            trainer = create_supervised_trainer(net, optimizer, criterion, device=device, non_blocking=True)
-            train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
-            validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
-            test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True)
-        else:
-            trainer = create_supervised_trainer(net, optimizer, criterion, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
-            train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
-            validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
-            test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+        trainer, train_evaluator, validation_evaluator, test_evaluator = self.create_trainer(net, optimizer, criterion, metrics, device)
 
         def setup_state(trainer):
             trainer.state.epoch = start_epoch

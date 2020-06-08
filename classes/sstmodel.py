@@ -34,6 +34,7 @@ SEED = 1234
 torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 
+
 # Abstract SST model
 class AbstractSSTTextClassificationModel(AbstractClassificationModel):
 
@@ -41,7 +42,7 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         super(AbstractSSTTextClassificationModel, self).__init__(args)
 
         self.model_name = "dependency"
-        self.input_dim= 300
+        self.input_dim = 300
         self.mem_dim = 168
         self.num_classes = 3 # 0 1 2 (1 neutral)
         self.data_path = "data/sst/sst/"
@@ -51,19 +52,7 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         self.optimizer = None
         self.criterion = None
     
-    # compile model
-    def compile_model(self, net):
-        print("Learning rate is set to ", self.learning_rate)
-        #define optimizer and loss
-        optimizer = optim.Adam(net.parameters())
-        criterion = nn.NLLLoss().cuda(0)
-
-        self.optimizer = optimizer
-        self.criterion = criterion
-
-        return optimizer, criterion
-
-    # Load dataset and split into training and test sets.
+    # Load datasets
     def load_dataset(self):
 
         train_dir = os.path.join(self.data_path, 'train/')
@@ -101,30 +90,13 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
             test_dataset = SSTDataset(test_dir, self.vocab, self.num_classes, False, self.model_name)
             torch.save(test_dataset, test_file)
 
-        #set batch size
-        BATCH_SIZE = 64
+        return train_dataset, validation_dataset, test_dataset
 
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        #Load an iterator
-        train_iterator = data.BucketIterator(train_dataset, 
-            batch_size = BATCH_SIZE,
-            sort_key = lambda x: len(x.text),
-            sort_within_batch=True,
-            device = device)
-        validation_iterator = data.BucketIterator(dev_dataset, 
-            batch_size = BATCH_SIZE,
-            sort_key = lambda x: len(x.text),
-            sort_within_batch=True,
-            device = device)
-        test_iterator = data.BucketIterator(test_dataset, 
-            batch_size = BATCH_SIZE,
-            sort_key = lambda x: len(x.text),
-            sort_within_batch=True,
-            device = device)
-
-        return train_iterator, validation_iterator, test_iterator
-
+    def create_criterion(self):
+        criterion = nn.NLLLoss().cuda(0)
+        return criterion
+        
 
     def create_trainer(self, net, optimizer, criterion, metrics, device):
         global args
@@ -134,53 +106,156 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         args.batchsize = 64
         args.elmlr = 0.1
 
-        trainer = SentimentTrainer(args, net, self.embedding_model ,criterion, optimizer)
-        train_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
-        validation_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
-        test_evaluator = create_supervised_evaluator(net, metrics=metrics, device=device, non_blocking=True, prepare_batch=self.prepare_batch)
+        trainer = SentimentTrainer(args, net, self.embedding_model, criterion, optimizer)
+        return trainer
+    
 
-        return trainer, train_evaluator, validation_evaluator, test_evaluator
+    def run(self):
+
+        # GPU related settings
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("Torch:", torch.__version__, "(CPU+GPU)" if  torch.cuda.is_available() else "(CPU)")
+        torch.cuda.set_device(0)
+
+        # Create directories
+        if not os.path.isdir('checkpoints'):
+            os.mkdir('checkpoints')
+        if not os.path.isdir('results'):
+            os.mkdir('results')
+
+        # Load dataset
+        train_dataset, validation_dataset, test_dataset = self.load_dataset()
+
+        # Create model
+        criterion = self.create_criterion()
+
+        model = TreeLSTMSentiment(
+                device, vocab.size(),
+                self.input_dim, self.mem_dim,
+                self.num_classes, self.model_name, criterion
+        )
+
+        embedding_model = nn.Embedding(vocab.size(), self.input_dim).cuda(0)
+
+        #define trainer
+        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, weight_decay=args.wd)
+
+        trainer = self.create_trainer(model, enbedding_model, criterion, optimizer)
+
+        emb_file = os.path.join(args.data, 'sst_embed.pth')
+        if os.path.isfile(emb_file):
+            emb = torch.load(emb_file).cuda()
+
+        embedding_model.state_dict()['weight'].copy_(emb)
+
+        # Track train & test accuracy and loss at end of each epoch
+        history = { "loss": [], "test_loss": [], 
+                "accuracy": [], "test_accuracy": [], 
+                "nll": [], "test_nll": [], 
+                "correct_nll": [], "test_correct_nll": [], 
+                "incorrect_nll": [], "test_incorrect_nll": [], 
+                "correct_entropy": [], "test_correct_entropy": [], 
+                "incorrect_entropy": [], "test_incorrect_entropy": [],
+                "test_ece": [], 
+                "test_accuracy_sum_bins": [], 
+                "test_accuracy_num_bins": []}
+
+        # Resume training
+        start_epoch = 0
+        if self.resume:
+            net, optimizer, start_epoch, history = self.load_checkpoint(net, optimizer, history)
+            optimizer, criterion = self.compile_model(net)
+
+        # Create metrics
+        metrics = {
+            'accuracy': Accuracy(output_transform=lambda output: (torch.round(output[0]), output[1]), device=device),
+            'loss': Loss(criterion, device=device),
+            'nll': NLL(device=device),
+            'correct_nll': CorrectNLL(device=device),
+            'incorrect_nll': IncorrectNLL(device=device),
+            'correct_entropy': CorrectCrossEntropy(device=device),
+            'incorrect_entropy': IncorrectCrossEntropy(device=device),
+            'ece': ECE(device=device)
+        }
+   
+        def setup_state(trainer):
+            trainer.state.epoch = start_epoch
+
+        def save_state(trainer):
+            self.save_checkpoint(trainer, net, optimizer, start_epoch, history)
+
+        def log_train_results(trainer):
+            train_evaluator.run(train_loader)
+            metrics = train_evaluator.state.metrics
+            accuracy = metrics['accuracy']
+            loss = metrics['loss']
+            nll = metrics['nll']
+            correct_nll = metrics['correct_nll']
+            incorrect_nll = metrics['incorrect_nll']
+            correct_entropy = metrics['correct_entropy']
+            incorrect_entropy = metrics['incorrect_entropy']
+            ece, accuracy_sum_bins, accuracy_num_bins = metrics['ece']
+            history['accuracy'].append(accuracy)
+            history['loss'].append(loss)
+            history['nll'].append(nll)
+            history['correct_nll'].append(correct_nll)
+            history['incorrect_nll'].append(incorrect_nll)
+            history['correct_entropy'].append(correct_entropy)
+            history['incorrect_entropy'].append(incorrect_entropy)
+            print("Epoch[{}] Train Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
+                  .format(trainer.state.epoch, accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
+    
+        def log_test_results(trainer):
+            test_evaluator.run(test_loader)
+            metrics = test_evaluator.state.metrics
+            accuracy = metrics['accuracy']
+            loss = metrics['loss']
+            nll = metrics['nll']
+            correct_nll = metrics['correct_nll']
+            incorrect_nll = metrics['incorrect_nll']
+            correct_entropy = metrics['correct_entropy']
+            incorrect_entropy = metrics['incorrect_entropy']
+            ece, accuracy_sum_bins, accuracy_num_bins = metrics['ece']
+            history['test_accuracy'].append(accuracy)
+            history['test_loss'].append(loss)
+            history['test_nll'].append(nll)
+            history['test_correct_nll'].append(correct_nll)
+            history['test_incorrect_nll'].append(incorrect_nll)
+            history['test_correct_entropy'].append(correct_entropy)
+            history['test_incorrect_entropy'].append(incorrect_entropy)
+            history['test_ece'].append(ece)
+            print("Test Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
+                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll))
+
+            # Reliability plot
+            history['test_accuracy_sum_bins'].append(accuracy_sum_bins)
+            history['test_accuracy_num_bins'].append(accuracy_num_bins)
+    
+        trainer.add_event_handler(Events.STARTED, setup_state)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED, log_train_results)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), save_state)
+
+        # kick off training...
+        for epoch in range(args.epochs):
+            train_loss = trainer.train(train_dataset)
+            train_loss, train_pred = trainer.test(train_dataset)
+            dev_loss, dev_pred = trainer.test(dev_dataset)
+            test_loss, test_pred = trainer.test(test_dataset)
+
+            train_acc = metrics.sentiment_accuracy_score(train_pred, train_dataset.labels)
+            dev_acc = metrics.sentiment_accuracy_score(dev_pred, dev_dataset.labels)
+            test_acc = metrics.sentiment_accuracy_score(test_pred, test_dataset.labels)
+            print('==> Train loss   : %f \t' % train_loss, end="")
+            print('Epoch ', epoch, 'train percentage ', train_acc)
+            print('Epoch ', epoch, 'dev percentage ', dev_acc)
+            print('Epoch ', epoch, 'test percentage ', test_acc)
+
+
+        self.output_results(history)
 
 
 # Tree LSTM model
 class TreeLSTMNet(AbstractSSTTextClassificationModel):
-    
-    # Set model
-    def define_model(self):
-
-        # initialize model
-        model = TreeLSTMSentiment(
-                "cuda", self.vocab.size(),
-                self.input_dim, self.mem_dim,
-                self.num_classes, self.model_name, self.criterion
-            )
-
-        self.embedding_model = nn.Embedding(self.vocab.size(), self.input_dim).cuda()
-
-        # for words common to dataset vocab and GLOVE, use GLOVE vectors
-        # for other words in dataset vocab, use random normal vectors
-        emb_file = os.path.join(self.data_path, 'sst_embed.pth')
-        if os.path.isfile(emb_file):
-            emb = torch.load(emb_file)
-        else:
-
-            # load glove embeddings and vocab
-            glove_vocab, glove_emb = load_word_vectors(os.path.join("data/sst/glove",'glove.840B.300d'))
-            print('==> GLOVE vocabulary size: %d ' % glove_vocab.size())
-
-            emb = torch.zeros(self.vocab.size(),glove_emb.size(1))
-
-            for word in self.vocab.labelToIdx.keys():
-                if glove_vocab.getIndex(word):
-                    emb[self.vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
-                else:
-                    emb[self.vocab.getIndex(word)] = torch.Tensor(emb[self.vocab.getIndex(word)].size()).normal_(-0.05,0.05)
-            torch.save(emb, emb_file)
-            print('done creating emb, quit')
-
-        emb = emb.cuda()
-
-        self.embedding_model.state_dict()['weight'].copy_(emb)
-
-        return model.cuda()
+    pass    
 

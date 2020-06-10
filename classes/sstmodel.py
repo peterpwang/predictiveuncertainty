@@ -11,6 +11,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from ignite.engine import create_supervised_trainer, create_supervised_evaluator
+from ignite.metrics import Accuracy, Loss, RunningAverage
+
+from .custommetrics import *
 
 from .thirdparty.TreeLSTMSentiment import Constants
 # NEURAL NETWORK MODULES/LAYERS
@@ -47,50 +50,11 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         self.num_classes = 3 # 0 1 2 (1 neutral)
         self.data_path = "data/sst/sst/"
         
-        self.vocab = None
-        self.embedding_model = None
-        self.optimizer = None
-        self.criterion = None
-    
-    # Load datasets
+    def define_model(self):
+        pass
+
     def load_dataset(self):
-
-        train_dir = os.path.join(self.data_path, 'train/')
-        dev_dir = os.path.join(self.data_path, 'dev/')
-        test_dir = os.path.join(self.data_path, 'test/')
-
-        # write unique words from all token files
-        token_files = [os.path.join(split, 'sents.toks') for split in [train_dir, dev_dir, test_dir]]
-        vocab_file = os.path.join(self.data_path,'vocab-cased.txt') # use vocab-cased
-        # get vocab object from vocab file previously written
-        self.vocab = Vocab(filename=vocab_file)
-        print('==> SST vocabulary size : %d ' % self.vocab.size())
-
-        # train
-        train_file = os.path.join(self.data_path,'sst_train.pth')
-        if os.path.isfile(train_file):
-            train_dataset = torch.load(train_file)
-        else:
-            train_dataset = SSTDataset(train_dir, self.vocab, self.num_classes, False, self.model_name)
-            torch.save(train_dataset, train_file)
-
-        # dev
-        dev_file = os.path.join(self.data_path,'sst_dev.pth')
-        if os.path.isfile(dev_file):
-            dev_dataset = torch.load(dev_file)
-        else:
-            dev_dataset = SSTDataset(dev_dir, self.vocab, self.num_classes, False, self.model_name)
-            torch.save(dev_dataset, dev_file)
-
-        # test
-        test_file = os.path.join(self.data_path,'sst_test.pth')
-        if os.path.isfile(test_file):
-            test_dataset = torch.load(test_file)
-        else:
-            test_dataset = SSTDataset(test_dir, self.vocab, self.num_classes, False, self.model_name)
-            torch.save(test_dataset, test_file)
-
-        return train_dataset, validation_dataset, test_dataset
+        pass
 
 
     def create_criterion(self):
@@ -98,7 +62,7 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         return criterion
         
 
-    def create_trainer(self, net, optimizer, criterion, metrics, device):
+    def create_trainer(self, net, embedding_model, optimizer, criterion, device):
         global args
         args = parse_args(type=1)
         args.fine_grain = False
@@ -106,7 +70,7 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         args.batchsize = 64
         args.elmlr = 0.1
 
-        trainer = SentimentTrainer(args, net, self.embedding_model, criterion, optimizer)
+        trainer = SentimentTrainer(args, net, embedding_model, criterion, optimizer)
         return trainer
     
 
@@ -124,7 +88,40 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
             os.mkdir('results')
 
         # Load dataset
-        train_dataset, validation_dataset, test_dataset = self.load_dataset()
+        train_dir = os.path.join(self.data_path, 'train/')
+        dev_dir = os.path.join(self.data_path, 'dev/')
+        test_dir = os.path.join(self.data_path, 'test/')
+
+        # write unique words from all token files
+        token_files = [os.path.join(split, 'sents.toks') for split in [train_dir, dev_dir, test_dir]]
+        vocab_file = os.path.join(self.data_path,'vocab-cased.txt') # use vocab-cased
+        # get vocab object from vocab file previously written
+        vocab = Vocab(filename=vocab_file)
+        print('==> SST vocabulary size : %d ' % vocab.size())
+
+        # train
+        train_file = os.path.join(self.data_path,'sst_train.pth')
+        if os.path.isfile(train_file):
+            train_dataset = torch.load(train_file)
+        else:
+            train_dataset = SSTDataset(train_dir, vocab, self.num_classes, False, self.model_name)
+            torch.save(train_dataset, train_file)
+
+        # dev
+        dev_file = os.path.join(self.data_path,'sst_dev.pth')
+        if os.path.isfile(dev_file):
+            dev_dataset = torch.load(dev_file)
+        else:
+            dev_dataset = SSTDataset(dev_dir, vocab, self.num_classes, False, self.model_name)
+            torch.save(dev_dataset, dev_file)
+
+        # test
+        test_file = os.path.join(self.data_path,'sst_test.pth')
+        if os.path.isfile(test_file):
+            test_dataset = torch.load(test_file)
+        else:
+            test_dataset = SSTDataset(test_dir, vocab, self.num_classes, False, self.model_name)
+            torch.save(test_dataset, test_file)
 
         # Create model
         criterion = self.create_criterion()
@@ -133,18 +130,32 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
                 device, vocab.size(),
                 self.input_dim, self.mem_dim,
                 self.num_classes, self.model_name, criterion
-        )
+        ).cuda(0)
 
         embedding_model = nn.Embedding(vocab.size(), self.input_dim).cuda(0)
 
         #define trainer
-        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, weight_decay=args.wd)
+        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=self.learning_rate, weight_decay=5e-4)
 
-        trainer = self.create_trainer(model, enbedding_model, criterion, optimizer)
+        trainer = self.create_trainer(model, embedding_model, optimizer, criterion, device)
 
         emb_file = os.path.join(args.data, 'sst_embed.pth')
         if os.path.isfile(emb_file):
             emb = torch.load(emb_file).cuda()
+        else:
+            # load glove embeddings and vocab
+            glove_vocab, glove_emb = load_word_vectors(os.path.join('data/sst/glove/','glove.840B.300d'))
+            print('==> GLOVE vocabulary size: %d ' % glove_vocab.size())
+
+            emb = torch.zeros(vocab.size(),glove_emb.size(1))
+
+            for word in vocab.labelToIdx.keys():
+                if glove_vocab.getIndex(word):
+                    emb[vocab.getIndex(word)] = glove_emb[glove_vocab.getIndex(word)]
+                else:
+                    emb[vocab.getIndex(word)] = torch.Tensor(emb[vocab.getIndex(word)].size()).normal_(-0.05,0.05)
+            torch.save(emb, emb_file)
+            print('done creating emb, quit')
 
         embedding_model.state_dict()['weight'].copy_(emb)
 
@@ -231,11 +242,6 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
             history['test_accuracy_sum_bins'].append(accuracy_sum_bins)
             history['test_accuracy_num_bins'].append(accuracy_num_bins)
     
-        trainer.add_event_handler(Events.STARTED, setup_state)
-        trainer.add_event_handler(Events.EPOCH_COMPLETED, log_train_results)
-        trainer.add_event_handler(Events.EPOCH_COMPLETED, log_test_results)
-        trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), save_state)
-
         # kick off training...
         for epoch in range(args.epochs):
             train_loss = trainer.train(train_dataset)
@@ -250,6 +256,9 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
             print('Epoch ', epoch, 'train percentage ', train_acc)
             print('Epoch ', epoch, 'dev percentage ', dev_acc)
             print('Epoch ', epoch, 'test percentage ', test_acc)
+
+            log_train_results(trainer)
+            log_test_results(trainer);
 
 
         self.output_results(history)

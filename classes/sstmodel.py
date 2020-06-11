@@ -62,7 +62,7 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         return criterion
         
 
-    def create_trainer(self, net, embedding_model, optimizer, criterion, device):
+    def create_trainer(self, net, embedding_model, criterion, optimizer, device):
         global args
         args = parse_args(type=1)
         args.fine_grain = False
@@ -137,7 +137,7 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         #define trainer
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=self.learning_rate, weight_decay=5e-4)
 
-        trainer = self.create_trainer(model, embedding_model, optimizer, criterion, device)
+        trainer = self.create_trainer(model, embedding_model, criterion, optimizer, device)
 
         emb_file = os.path.join(args.data, 'sst_embed.pth')
         if os.path.isfile(emb_file):
@@ -245,7 +245,6 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         # kick off training...
         for epoch in range(args.epochs):
             train_loss = trainer.train(train_dataset)
-            train_loss, train_pred = trainer.test(train_dataset)
             dev_loss, dev_pred = trainer.test(dev_dataset)
             test_loss, test_pred = trainer.test(test_dataset)
 

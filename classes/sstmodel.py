@@ -13,7 +13,7 @@ import torch.optim as optim
 from ignite.engine import create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss, RunningAverage
 
-from .custommetrics import *
+from .sstmetrics import *
 
 from .thirdparty.TreeLSTMSentiment import Constants
 # NEURAL NETWORK MODULES/LAYERS
@@ -245,19 +245,20 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         # kick off training...
         for epoch in range(args.epochs):
             train_loss = trainer.train(train_dataset)
+            train_loss, train_pred = trainer.test(train_dataset)
             dev_loss, dev_pred = trainer.test(dev_dataset)
             test_loss, test_pred = trainer.test(test_dataset)
 
-            train_acc = metrics.sentiment_accuracy_score(train_pred, train_dataset.labels)
-            dev_acc = metrics.sentiment_accuracy_score(dev_pred, dev_dataset.labels)
-            test_acc = metrics.sentiment_accuracy_score(test_pred, test_dataset.labels)
+            train_acc = calculate_accuracy(train_pred, train_dataset.labels)
+            dev_acc = calculate_accuracy(dev_pred, dev_dataset.labels)
+            test_acc = calculate_accuracy(test_pred, test_dataset.labels)
             print('==> Train loss   : %f \t' % train_loss, end="")
             print('Epoch ', epoch, 'train percentage ', train_acc)
             print('Epoch ', epoch, 'dev percentage ', dev_acc)
             print('Epoch ', epoch, 'test percentage ', test_acc)
 
-            log_train_results(trainer)
-            log_test_results(trainer);
+            #log_train_results(trainer)
+            #log_test_results(trainer);
 
 
         self.output_results(history)

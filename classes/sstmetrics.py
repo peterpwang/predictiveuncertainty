@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable as Var
+from copy import deepcopy
 
 from ignite.metrics import Metric
 from ignite.exceptions import NotComputableError
@@ -10,13 +12,28 @@ from ignite.metrics.metric import sync_all_reduce, reinit__is_reduced
 
 epsilon = 1e-7
 
+# All inputs are
+# y_pred: (records*classes) [-0.4012, -1.4351,  0.1430,  1.4880,  0.0253,  1.8506, -1.3660,  0.7904, -0.6024, -1.4305],...
+# y: (records) [0, 1, 2, 2, 0, ...]
 def calculate_accuracy(predictions, labels):
+    val, predictions = torch.max(predictions, 1)
+
     correct = (predictions==labels).sum()
     total = labels.size(0)
     acc = float(correct)/total
     return acc
 
-# NLL(loss)
+def calculate_nll(y_pred, y):
+    batch_size = y_pred.shape[0]
+
+    y_pred = F.softmax(y_pred, dim=1)
+    y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
+    nll = -torch.log(y_pred).sum().item()
+
+    return nll / batch_size
+
+
+# Correct NLL(loss)
 class NLL(Metric):
 
     def __init__(self, output_transform=lambda x: x, device=None):
@@ -35,13 +52,18 @@ class NLL(Metric):
         y_pred, y = output
         batch_size = y_pred.shape[0]
 
-        y_pred = F.softmax(y_pred, dim=1)
-        y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
-        nll = -torch.log(y_pred).sum().item()
+        indices = torch.argmax(y_pred, dim=1)
+        mask = torch.eq(indices, y).view(-1)
+        y_pred = y_pred[mask]
+        y = y[mask]
 
-        self._sum_nll += nll
-        self._count_nll += batch_size
-        #print("all:", self._sum_nll, ":", self._count_nll)
+        if len(y_pred) > 0:
+            y_pred = F.softmax(y_pred, dim=1)
+            y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
+            nll = -torch.log(y_pred).sum().item()
+            self._sum_nll += nll
+            self._count_nll += batch_size
+        #print("correct:", self._sum_nll, ":", self._count_nll)
 
     def compute(self):
         if self._count_nll == 0:

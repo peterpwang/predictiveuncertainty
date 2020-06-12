@@ -256,6 +256,12 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
             print('Epoch ', epoch, 'train percentage ', train_acc)
             print('Epoch ', epoch, 'dev percentage ', dev_acc)
             print('Epoch ', epoch, 'test percentage ', test_acc)
+            train_nll = calculate_nll(train_pred, train_dataset.labels.int())
+            dev_nll = calculate_nll(dev_pred, dev_dataset.labels.int())
+            test_nll = calculate_nll(test_pred, test_dataset.labels.int())
+            print('Epoch ', epoch, 'train NLL ', train_nll)
+            print('Epoch ', epoch, 'dev NLL ', dev_nll)
+            print('Epoch ', epoch, 'test NLL ', test_nll)
 
             #log_train_results(trainer)
             #log_test_results(trainer);

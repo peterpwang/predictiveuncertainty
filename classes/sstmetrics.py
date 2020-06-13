@@ -32,248 +32,103 @@ def calculate_nll(y_pred, y):
 
     return nll / batch_size
 
+def calculate_correct_nll(y_pred, y):
+    batch_size = y_pred.shape[0]
 
-# Correct NLL(loss)
-class NLL(Metric):
+    indices = torch.argmax(y_pred, dim=1)
+    mask = torch.eq(indices, y).view(-1)
+    y_pred = y_pred[mask]
+    y = y[mask]
 
-    def __init__(self, output_transform=lambda x: x, device=None):
-        self._sum_nll = 0.0
-        self._count_nll = 0
-        super(NLL, self).__init__(output_transform=output_transform, device=device)
-
-    @reinit__is_reduced
-    def reset(self):
-        self._sum_nll = 0.0
-        self._count_nll = 0
-        super(NLL, self).reset()
-
-    @reinit__is_reduced
-    def update(self, output):
-        y_pred, y = output
-        batch_size = y_pred.shape[0]
-
-        indices = torch.argmax(y_pred, dim=1)
-        mask = torch.eq(indices, y).view(-1)
-        y_pred = y_pred[mask]
-        y = y[mask]
-
-        if len(y_pred) > 0:
-            y_pred = F.softmax(y_pred, dim=1)
-            y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
-            nll = -torch.log(y_pred).sum().item()
-            self._sum_nll += nll
-            self._count_nll += batch_size
-        #print("correct:", self._sum_nll, ":", self._count_nll)
-
-    def compute(self):
-        if self._count_nll == 0:
-            return 0.0
-        else:
-            return self._sum_nll / self._count_nll
-
-
-# Correct NLL(loss)
-class CorrectNLL(Metric):
-
-    def __init__(self, output_transform=lambda x: x, device=None):
-        self._sum_nll = 0.0
-        self._count_nll = 0
-        super(CorrectNLL, self).__init__(output_transform=output_transform, device=device)
-
-    @reinit__is_reduced
-    def reset(self):
-        self._sum_nll = 0.0
-        self._count_nll = 0
-        super(CorrectNLL, self).reset()
-
-    @reinit__is_reduced
-    def update(self, output):
-        y_pred, y = output
-        batch_size = y_pred.shape[0]
-
-        indices = torch.argmax(y_pred, dim=1)
-        mask = torch.eq(indices, y).view(-1)
-        y_pred = y_pred[mask]
-        y = y[mask]
-
-        if len(y_pred) > 0:
-            y_pred = F.softmax(y_pred, dim=1)
-            y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
-            nll = -torch.log(y_pred).sum().item()
-            self._sum_nll += nll
-            self._count_nll += batch_size
-        #print("correct:", self._sum_nll, ":", self._count_nll)
-
-    def compute(self):
-        if self._count_nll == 0:
-            return 0.0
-        else:
-            return self._sum_nll / self._count_nll
-
-
-# Incorrect NLL(loss)
-class IncorrectNLL(Metric):
-
-    def __init__(self, output_transform=lambda x: x, device=None):
-        self._sum_nll = 0.0
-        self._count_nll = 0
-        super(IncorrectNLL, self).__init__(output_transform=output_transform, device=device)
-
-    @reinit__is_reduced
-    def reset(self):
-        self._sum_nll = 0.0
-        self._count_nll = 0
-        super(IncorrectNLL, self).reset()
-
-    @reinit__is_reduced
-    def update(self, output):
-        y_pred, y = output
-        batch_size = y_pred.shape[0]
-
-        indices = torch.argmax(y_pred, dim=1)
-        mask = torch.ne(indices, y).view(-1)
-        y_pred = y_pred[mask]
-        y = y[mask]
-
-        if len(y_pred) > 0:
-            y_pred = F.softmax(y_pred, dim=1)
-            y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
-            nll = -torch.log(y_pred).sum().item()
-            self._sum_nll += nll
-            self._count_nll += batch_size
-        #print("incorrect:", self._sum_nll, ":", self._count_nll)
-
-    def compute(self):
-        if self._count_nll == 0:
-            return 0.0
-        else:
-            return self._sum_nll / self._count_nll
-
-
-# Correct Crossentropy
-class CorrectCrossEntropy(Metric):
-
-    def __init__(self, output_transform=lambda x: x, device=None):
-        self._sum_cross_entropy = 0.0
-        self._count_cross_entropy = 0
-        super(CorrectCrossEntropy, self).__init__(output_transform=output_transform, device=device)
-
-    @reinit__is_reduced
-    def reset(self):
-        self._sum_cross_entropy = 0.0
-        self._count_cross_entropy = 0
-        super(CorrectCrossEntropy, self).reset()
-
-    @reinit__is_reduced
-    def update(self, output):
-        y_pred, y = output
-        batch_size = y_pred.shape[0]
-
+    null = 0.0
+    if len(y_pred) > 0:
         y_pred = F.softmax(y_pred, dim=1)
-        mask = torch.eq(torch.argmax(y_pred, dim=1), y).view(-1)
-        y_pred = y_pred[mask]
+        y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
+        nll = -torch.log(y_pred).sum().item()
 
-        if len(y_pred) > 0:
-            entropy = -y_pred * torch.log(y_pred + epsilon)
-            self._sum_cross_entropy += torch.sum(entropy).item()
-            self._count_cross_entropy += batch_size
+    return nll / batch_size
 
-    def compute(self):
-        if self._count_cross_entropy== 0:
-            return 0.0
-        else:
-            return self._sum_cross_entropy / self._count_cross_entropy
+def calculate_incorrect_nll(y_pred, y):
+    batch_size = y_pred.shape[0]
 
+    indices = torch.argmax(y_pred, dim=1)
+    mask = torch.ne(indices, y).view(-1)
+    y_pred = y_pred[mask]
+    y = y[mask]
 
-# Incorrect Entropy
-class IncorrectCrossEntropy(Metric):
-
-    def __init__(self, output_transform=lambda x: x, device=None):
-        self._sum_cross_entropy = 0.0
-        self._count_cross_entropy = 0
-        super(IncorrectCrossEntropy, self).__init__(output_transform=output_transform, device=device)
-
-    @reinit__is_reduced
-    def reset(self):
-        self._sum_cross_entropy = 0.0
-        self._count_cross_entropy = 0
-        super(IncorrectCrossEntropy, self).reset()
-
-    @reinit__is_reduced
-    def update(self, output):
-        y_pred, y = output
-        batch_size = y_pred.shape[0]
-
+    nll = 0.0
+    if len(y_pred) > 0:
         y_pred = F.softmax(y_pred, dim=1)
-        mask = torch.ne(torch.argmax(y_pred, dim=1), y).view(-1)
-        y_pred = y_pred[mask]
+        y_pred = y_pred[range(y_pred.shape[0]), y] + epsilon
+        nll = -torch.log(y_pred).sum().item()
 
-        if len(y_pred) > 0:
-            entropy = -y_pred * torch.log(y_pred + epsilon)
-            self._sum_cross_entropy += torch.sum(entropy).item()
-            self._count_cross_entropy += batch_size
+    return nll / batch_size
 
-    def compute(self):
-        if self._count_cross_entropy== 0:
-            return 0.0
-        else:
-            return self._sum_cross_entropy / self._count_cross_entropy
+def calculate_correct_entropy(y_pred, y):
+    batch_size = y_pred.shape[0]
 
+    y_pred = F.softmax(y_pred, dim=1)
+    mask = torch.eq(torch.argmax(y_pred, dim=1), y).view(-1)
+    y_pred = y_pred[mask]
+
+    entropy = 0.0
+    if len(y_pred) > 0:
+        entropy = -y_pred * torch.log(y_pred + epsilon)
+
+    return entropy / batch_size
+
+def calculate_incorrect_entropy(y_pred, y):
+    batch_size = y_pred.shape[0]
+
+    y_pred = F.softmax(y_pred, dim=1)
+    mask = torch.ne(torch.argmax(y_pred, dim=1), y).view(-1)
+    y_pred = y_pred[mask]
+
+    entropy = 0.0
+    if len(y_pred) > 0:
+        entropy = -y_pred * torch.log(y_pred + epsilon)
+
+    return entropy / batch_size
 
 # ECE & histogram
-class ECE(Metric):
+def calculate_ece(y_pred, y):
+    n_bins = 25
+    _sum_ece = 0.0
+    _accuracy_sum_bins = torch.zeros([n_bins], dtype=torch.float32)
+    _accuracy_num_bins = torch.zeros([n_bins], dtype=torch.int32)
 
-    def __init__(self, output_transform=lambda x: x, device=None):
-        self.n_bins = 25
-        self._sum_ece = 0.0
-        self._accuracy_sum_bins = torch.zeros([self.n_bins], dtype=torch.float32)
-        self._accuracy_num_bins = torch.zeros([self.n_bins], dtype=torch.int32)
-        super(ECE, self).__init__(output_transform=output_transform, device=device)
+    softmaxes = F.softmax(y_pred, dim=1)
+    confidences, predictions = torch.max(softmaxes, 1)
+    accuracies = predictions.eq(y)
 
-    @reinit__is_reduced
-    def reset(self):
-        self._sum_ece = 0.0
-        self._accuracy_sum_bins = torch.zeros([self.n_bins], dtype=torch.float32)
-        self._accuracy_num_bins = torch.zeros([self.n_bins], dtype=torch.int32)
-        super(ECE, self).reset()
+    bin_boundaries = torch.linspace(0, 1, n_bins + 1)
+    bin_lowers = bin_boundaries[:-1]
+    bin_uppers = bin_boundaries[1:]
 
-    @reinit__is_reduced
-    def update(self, output):
-        y_pred, y = output
+    ece = torch.zeros(1, device=y_pred.device)
+    idx = 0
+    for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
+        # Calculated |confidence - accuracy| in each bin
+        in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
+        prop_in_bin = in_bin.float().mean()
+        if prop_in_bin.item() > 0:
+            accuracy_in_bin = accuracies[in_bin].float().mean()
+            avg_confidence_in_bin = confidences[in_bin].mean()
+            ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
+            # Count accuracy in each bin
+            _accuracy_sum_bins[idx] += accuracies[in_bin].float().sum()
+            _accuracy_num_bins[idx] += in_bin.int().sum()
 
-        softmaxes = F.softmax(y_pred, dim=1)
-        confidences, predictions = torch.max(softmaxes, 1)
-        accuracies = predictions.eq(y)
+        idx += 1
 
-        bin_boundaries = torch.linspace(0, 1, self.n_bins + 1)
-        bin_lowers = bin_boundaries[:-1]
-        bin_uppers = bin_boundaries[1:]
+    # ece is for each epoch
+    _sum_ece = ece.item()
 
-        ece = torch.zeros(1, device=y_pred.device)
-        idx = 0
-        for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
-            # Calculated |confidence - accuracy| in each bin
-            in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
-            prop_in_bin = in_bin.float().mean()
-            if prop_in_bin.item() > 0:
-                accuracy_in_bin = accuracies[in_bin].float().mean()
-                avg_confidence_in_bin = confidences[in_bin].mean()
-                ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
-                # Count accuracy in each bin
-                self._accuracy_sum_bins[idx] += accuracies[in_bin].float().sum()
-                self._accuracy_num_bins[idx] += in_bin.int().sum()
+    for i in range(n_bins):
+        if (_accuracy_num_bins[i] == 0):
+            _accuracy_sum_bins[i] = 0
+        else:
+            _accuracy_sum_bins[i] = _accuracy_sum_bins[i]/_accuracy_num_bins[i]
 
-            idx += 1
-
-        # ece is for each epoch
-        self._sum_ece = ece.item()
-
-    def compute(self):
-        for i in range(self.n_bins):
-            if (self._accuracy_num_bins[i] == 0):
-                self._accuracy_sum_bins[i] = 0
-            else:
-                self._accuracy_sum_bins[i] = self._accuracy_sum_bins[i]/self._accuracy_num_bins[i]
-
-        return self._sum_ece, self._accuracy_sum_bins.cpu(), self._accuracy_num_bins.cpu()
+    return _sum_ece, _accuracy_sum_bins.cpu(), _accuracy_num_bins.cpu()
 

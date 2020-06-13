@@ -11,7 +11,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from ignite.engine import create_supervised_trainer, create_supervised_evaluator
-from ignite.metrics import Accuracy, Loss, RunningAverage
 
 from .sstmetrics import *
 
@@ -73,6 +72,51 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         trainer = SentimentTrainer(args, net, embedding_model, criterion, optimizer)
         return trainer
     
+
+    def log_train_results(self, epoch, trainer, dev_dataset, history):
+        loss, dev_pred = trainer.test(dev_dataset)
+
+        accuracy = calculate_accuracy(dev_pred, dev_dataset.labels)
+        nll = calculate_nll(dev_pred, dev_dataset.labels.to(torch.long))
+        correct_nll = calculate_correct_nll(dev_pred, dev_dataset.labels.to(torch.long))
+        incorrect_nll = calculate_incorrect_nll(dev_pred, dev_dataset.labels.to(torch.long))
+        correct_entropy = calculate_correct_entropy(dev_pred, dev_dataset.labels.to(torch.long))
+        incorrect_entropy = calculate_incorrect_entropy(dev_pred, dev_dataset.labels.to(torch.long))
+        sum_ece, accuracy_sum_bins, accuracy_num_bins = calculate_ece(dev_pred, dev_dataset.labels.to(torch.long))
+        history['accuracy'].append(accuracy)
+        history['loss'].append(loss)
+        history['nll'].append(nll)
+        history['correct_nll'].append(correct_nll)
+        history['incorrect_nll'].append(incorrect_nll)
+        history['correct_entropy'].append(correct_entropy)
+        history['incorrect_entropy'].append(incorrect_entropy)
+        print("Epoch[{}] Train Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
+              .format(epoch, accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
+    
+    def log_test_results(self, epoch, trainer, test_dataset, history):
+        loss, test_pred = trainer.test(test_dataset)
+
+        accuracy = calculate_accuracy(test_pred, test_dataset.labels)
+        nll = calculate_nll(test_pred, test_dataset.labels.to(torch.long))
+        correct_nll = calculate_correct_nll(test_pred, test_dataset.labels.to(torch.long))
+        incorrect_nll = calculate_incorrect_nll(test_pred, test_dataset.labels.to(torch.long))
+        correct_entropy = calculate_correct_entropy(test_pred, test_dataset.labels.to(torch.long))
+        incorrect_entropy = calculate_incorrect_entropy(test_pred, test_dataset.labels.to(torch.long))
+        ece, accuracy_sum_bins, accuracy_num_bins = calculate_ece(test_pred, test_dataset.labels.to(torch.long))
+        history['test_accuracy'].append(accuracy)
+        history['test_loss'].append(loss)
+        history['test_nll'].append(nll)
+        history['test_correct_nll'].append(correct_nll)
+        history['test_incorrect_nll'].append(incorrect_nll)
+        history['test_correct_entropy'].append(correct_entropy)
+        history['test_incorrect_entropy'].append(incorrect_entropy)
+        history['test_ece'].append(ece)
+        print("Test Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
+              .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll))
+
+        # Reliability plot
+        history['test_accuracy_sum_bins'].append(accuracy_sum_bins)
+        history['test_accuracy_num_bins'].append(accuracy_num_bins)
 
     def run(self):
 
@@ -176,126 +220,13 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         if self.resume:
             net, optimizer, start_epoch, history = self.load_checkpoint(net, optimizer, history)
             optimizer, criterion = self.compile_model(net)
-
-        # Create metrics
-        metrics = {
-            #'accuracy': Accuracy(output_transform=lambda output: (torch.round(output[0]), output[1]), device=device),
-            #'loss': Loss(criterion, device=device),
-            #'nll': NLL(device=device),
-            #'correct_nll': CorrectNLL(device=device),
-            #'incorrect_nll': IncorrectNLL(device=device),
-            #'correct_entropy': CorrectCrossEntropy(device=device),
-            #'incorrect_entropy': IncorrectCrossEntropy(device=device),
-            #'ece': ECE(device=device)
-        }
-   
-        def setup_state(trainer):
-            trainer.state.epoch = start_epoch
-
-        def save_state(trainer):
-            self.save_checkpoint(trainer, net, optimizer, start_epoch, history)
-
-        def log_train_results(trainer):
-            train_evaluator.run(train_loader)
-            metrics = train_evaluator.state.metrics
-            accuracy = metrics['accuracy']
-            loss = metrics['loss']
-            nll = metrics['nll']
-            correct_nll = metrics['correct_nll']
-            incorrect_nll = metrics['incorrect_nll']
-            correct_entropy = metrics['correct_entropy']
-            incorrect_entropy = metrics['incorrect_entropy']
-            ece, accuracy_sum_bins, accuracy_num_bins = metrics['ece']
-            history['accuracy'].append(accuracy)
-            history['loss'].append(loss)
-            history['nll'].append(nll)
-            history['correct_nll'].append(correct_nll)
-            history['incorrect_nll'].append(incorrect_nll)
-            history['correct_entropy'].append(correct_entropy)
-            history['incorrect_entropy'].append(incorrect_entropy)
-            print("Epoch[{}] Train Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
-                  .format(trainer.state.epoch, accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
-    
-        def log_test_results(trainer):
-            test_evaluator.run(test_loader)
-            metrics = test_evaluator.state.metrics
-            accuracy = metrics['accuracy']
-            loss = metrics['loss']
-            nll = metrics['nll']
-            correct_nll = metrics['correct_nll']
-            incorrect_nll = metrics['incorrect_nll']
-            correct_entropy = metrics['correct_entropy']
-            incorrect_entropy = metrics['incorrect_entropy']
-            ece, accuracy_sum_bins, accuracy_num_bins = metrics['ece']
-            history['test_accuracy'].append(accuracy)
-            history['test_loss'].append(loss)
-            history['test_nll'].append(nll)
-            history['test_correct_nll'].append(correct_nll)
-            history['test_incorrect_nll'].append(incorrect_nll)
-            history['test_correct_entropy'].append(correct_entropy)
-            history['test_incorrect_entropy'].append(incorrect_entropy)
-            history['test_ece'].append(ece)
-            print("Test Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
-                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll))
-
-            # Reliability plot
-            history['test_accuracy_sum_bins'].append(accuracy_sum_bins)
-            history['test_accuracy_num_bins'].append(accuracy_num_bins)
     
         # kick off training...
         for epoch in range(args.epochs):
             train_loss = trainer.train(train_dataset)
-            train_loss, train_pred = trainer.test(train_dataset)
-            dev_loss, dev_pred = trainer.test(dev_dataset)
-            test_loss, test_pred = trainer.test(test_dataset)
 
-            train_acc = calculate_accuracy(train_pred, train_dataset.labels)
-            dev_acc = calculate_accuracy(dev_pred, dev_dataset.labels)
-            test_acc = calculate_accuracy(test_pred, test_dataset.labels)
-            print('==> Train loss   : %f \t' % train_loss, end="")
-            print('Epoch ', epoch, 'train percentage ', train_acc)
-            print('Epoch ', epoch, 'dev percentage ', dev_acc)
-            print('Epoch ', epoch, 'test percentage ', test_acc)
-            train_nll = calculate_nll(train_pred, train_dataset.labels.to(torch.long))
-            dev_nll = calculate_nll(dev_pred, dev_dataset.labels.to(torch.long))
-            test_nll = calculate_nll(test_pred, test_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'train NLL ', train_nll)
-            print('Epoch ', epoch, 'dev NLL ', dev_nll)
-            print('Epoch ', epoch, 'test NLL ', test_nll)
-            train_nll = calculate_correct_nll(train_pred, train_dataset.labels.to(torch.long))
-            dev_nll = calculate_correct_nll(dev_pred, dev_dataset.labels.to(torch.long))
-            test_nll = calculate_correct_nll(test_pred, test_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'train correct NLL ', train_nll)
-            print('Epoch ', epoch, 'dev correct NLL ', dev_nll)
-            print('Epoch ', epoch, 'test correct NLL ', test_nll)
-            train_nll = calculate_incorrect_nll(train_pred, train_dataset.labels.to(torch.long))
-            dev_nll = calculate_incorrect_nll(dev_pred, dev_dataset.labels.to(torch.long))
-            test_nll = calculate_incorrect_nll(test_pred, test_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'train incorrect NLL ', train_nll)
-            print('Epoch ', epoch, 'dev incorrect NLL ', dev_nll)
-            print('Epoch ', epoch, 'test incorrect NLL ', test_nll)
-            train_entropy = calculate_correct_entropy(train_pred, train_dataset.labels.to(torch.long))
-            dev_entropy = calculate_correct_entropy(dev_pred, dev_dataset.labels.to(torch.long))
-            test_entropy = calculate_correct_entropy(test_pred, test_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'train correct entropy ', train_entropy)
-            print('Epoch ', epoch, 'dev correct entropy ', dev_entropy)
-            print('Epoch ', epoch, 'test correct entropy ', test_entropy)
-            train_nll = calculate_incorrect_entropy(train_pred, train_dataset.labels.to(torch.long))
-            dev_nll = calculate_incorrect_entropy(dev_pred, dev_dataset.labels.to(torch.long))
-            test_nll = calculate_incorrect_entropy(test_pred, test_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'train incorrect entropy ', train_entropy)
-            print('Epoch ', epoch, 'dev incorrect entropy ', dev_entropy)
-            print('Epoch ', epoch, 'test incorrect entropy ', test_entropy)
-            sum_ece, accuracy_sum_bins, accuracy_num_bins = calculate_ece(train_pred, train_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'train ece: ', sum_ece, accuracy_sum_bins, accuracy_num_bins)
-            sum_ece, accuracy_sum_bins, accuracy_num_bins = calculate_ece(dev_pred, dev_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'dev ece: ', sum_ece, accuracy_sum_bins, accuracy_num_bins)
-            sum_ece, accuracy_sum_bins, accuracy_num_bins = calculate_ece(test_pred, test_dataset.labels.to(torch.long))
-            print('Epoch ', epoch, 'test ece: ', sum_ece, accuracy_sum_bins, accuracy_num_bins)
-
-            #log_train_results(trainer)
-            #log_test_results(trainer);
-
+            self.log_train_results(epoch, trainer, dev_dataset, history)
+            self.log_test_results(epoch, trainer, test_dataset, history)
 
         self.output_results(history)
 

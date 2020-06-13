@@ -18,7 +18,7 @@ epsilon = 1e-7
 def calculate_accuracy(predictions, labels):
     val, predictions = torch.max(predictions, 1)
 
-    correct = (predictions==labels).sum()
+    correct = (predictions==labels).sum().item()
     total = labels.size(0)
     acc = float(correct)/total
     return acc
@@ -75,7 +75,7 @@ def calculate_correct_entropy(y_pred, y):
     if len(y_pred) > 0:
         entropy = -y_pred * torch.log(y_pred + epsilon)
 
-    return entropy / batch_size
+    return entropy.sum().item() / batch_size
 
 def calculate_incorrect_entropy(y_pred, y):
     batch_size = y_pred.shape[0]
@@ -88,7 +88,7 @@ def calculate_incorrect_entropy(y_pred, y):
     if len(y_pred) > 0:
         entropy = -y_pred * torch.log(y_pred + epsilon)
 
-    return entropy / batch_size
+    return entropy.sum().item() / batch_size
 
 # ECE & histogram
 def calculate_ece(y_pred, y):

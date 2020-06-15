@@ -1,4 +1,5 @@
 from .abstractmodel import AbstractClassificationModel
+from .abstractfocalmodel import FocalLoss
 
 import os
 import random
@@ -236,5 +237,13 @@ class TreeLSTMNet(AbstractSSTTextClassificationModel):
 
     def create_criterion(self):
         criterion = nn.NLLLoss().cuda(0)
+        return criterion
+
+
+# Tree LSTM Focal model
+class TreeLSTMFocalNet(AbstractSSTTextClassificationModel):
+
+    def create_criterion(self):
+        criterion = FocalLoss(self.focal_gamma).cuda(0)
         return criterion
 

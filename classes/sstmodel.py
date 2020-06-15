@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from ignite.engine import create_supervised_trainer, create_supervised_evaluator
 
+from abc import ABC, abstractmethod
+
 from .sstmetrics import *
 
 from .thirdparty.TreeLSTMSentiment import Constants
@@ -55,11 +57,9 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
     def load_dataset(self):
         pass
 
-
+    @abstractmethod
     def create_criterion(self):
-        criterion = nn.NLLLoss().cuda(0)
-        return criterion
-        
+        pass
 
     def create_trainer(self, net, embedding_model, criterion, optimizer, device):
         global args
@@ -179,7 +179,7 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
         embedding_model = nn.Embedding(vocab.size(), self.input_dim).cuda(0)
 
         #define trainer
-        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=self.learning_rate, weight_decay=5e-4)
+        optimizer = optim.Adagrad(filter(lambda p: p.requires_grad, model.parameters()), lr=self.learning_rate, weight_decay=1e-4)
 
         trainer = self.create_trainer(model, embedding_model, criterion, optimizer, device)
 
@@ -233,5 +233,8 @@ class AbstractSSTTextClassificationModel(AbstractClassificationModel):
 
 # Tree LSTM model
 class TreeLSTMNet(AbstractSSTTextClassificationModel):
-    pass    
+
+    def create_criterion(self):
+        criterion = nn.NLLLoss().cuda(0)
+        return criterion
 

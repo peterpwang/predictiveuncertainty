@@ -22,5 +22,5 @@ if __name__ == "__main__":
                         help='resume from checkpoint')
     args = parser.parse_args()
 
-    treelstmmodel = sstmodel.TreeLSTMNet(args)
-    treelstmmodel.run()
+    treelstmfocalmodel = sstmodel.TreeLSTMFocalNet(args)
+    treelstmfocalmodel.run()

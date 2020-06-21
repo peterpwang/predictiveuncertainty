@@ -16,6 +16,7 @@ if __name__ == "__main__":
     y5=[]
     y6=[]
     y7=[]
+    y8=[]
 
     # Open file
     with open(cvsfile_name, 'r') as csvfile:
@@ -33,6 +34,7 @@ if __name__ == "__main__":
             y5.append(float(row[4]))
             y6.append(float(row[5]))
             y7.append(float(row[6]))
+            y8.append(float(row[7]))
             i += 1
 
     # Calculate moving average 
@@ -44,6 +46,7 @@ if __name__ == "__main__":
     yy5=[]
     yy6=[]
     yy7=[]
+    yy8=[]
 
     i = 0
     for row in range(len(x)-rolling+1):
@@ -55,6 +58,7 @@ if __name__ == "__main__":
         s5 = 0.0
         s6 = 0.0
         s7 = 0.0
+        s8 = 0.0
         for j in range(rolling):
             s1 += y1[row+j]
             s2 += y2[row+j]
@@ -63,6 +67,7 @@ if __name__ == "__main__":
             s5 += y5[row+j]
             s6 += y6[row+j]
             s7 += y7[row+j]
+            s8 += y8[row+j]
 
         yy1.append(s1)
         yy2.append(s2)
@@ -71,6 +76,7 @@ if __name__ == "__main__":
         yy5.append(s5)
         yy6.append(s6)
         yy7.append(s7)
+        yy8.append(s8)
         i += 1
 
     plt.plot(xx, yy1, label='Resnet50')
@@ -78,8 +84,9 @@ if __name__ == "__main__":
     plt.plot(xx, yy3, label='Densenet121')
     plt.plot(xx, yy4, label='Densenet121 (FL γ=1)')
     plt.plot(xx, yy5, label='EfficientNet B0')
-    plt.plot(xx, yy6, label='EfficientNet B2')
+    plt.plot(xx, yy6, label='EfficientNet B0 (FL γ=1)')
     plt.plot(xx, yy7, label='EfficientNet B7')
+    plt.plot(xx, yy8, label='EfficientNet B7 (FL γ=1)')
 
     plt.title(title)
     plt.legend(loc=legend_position)

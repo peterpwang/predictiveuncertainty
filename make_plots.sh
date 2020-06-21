@@ -23,7 +23,7 @@ awk -F ',' '{print $13}' results/EfficientNetB0CIFAR10FocalModel_result.tsv > re
 awk -F ',' '{print $13}' results/EfficientNetB7CIFAR10Model_result.tsv > results/EfficientNetB7CIFAR10Model_ECE.csv
 awk -F ',' '{print $13}' results/EfficientNetB7CIFAR10FocalModel_result.tsv > results/EfficientNetB7CIFAR10FocalModel_ECE.csv
 paste -d ',' results/Resnet50CIFAR10Model_ECE.csv results/Resnet50CIFAR10FocalGamma1Model_ECE.csv results/Densenet121CIFAR10Model_ECE.csv results/Densenet121CIFAR10FocalModel_ECE.csv results/EfficientNetB0CIFAR10Model_ECE.csv results/EfficientNetB0CIFAR10FocalModel_ECE.csv results/EfficientNetB7CIFAR10Model_ECE.csv results/EfficientNetB7CIFAR10FocalModel_ECE.csv > results/ECE.csv
-python3 make_plot.py results/ECE.csv ECE_CIFAR10 "lower left" 5
+python3 make_plot.py results/ECE.csv ECE_CIFAR10 "best" 5
 rm results/Resnet50CIFAR10Model_ECE.csv results/Resnet50CIFAR10FocalGamma1Model_ECE.csv results/Densenet121CIFAR10Model_ECE.csv results/Densenet121CIFAR10FocalModel_ECE.csv results/EfficientNetB0CIFAR10Model_ECE.csv results/EfficientNetB0CIFAR10FocalModel_ECE.csv results/EfficientNetB7CIFAR10Model_ECE.csv results/EfficientNetB7CIFAR10FocalModel_ECE.csv results/ECE.csv
 
 # Make Test error plot of CIFAR10
@@ -62,7 +62,7 @@ awk -F ',' '{print $13}' results/EfficientNetB0CIFAR100FocalModel_result.tsv > r
 awk -F ',' '{print $13}' results/EfficientNetB7CIFAR100Model_result.tsv > results/EfficientNetB7CIFAR100Model_ECE.csv
 awk -F ',' '{print $13}' results/EfficientNetB7CIFAR100FocalModel_result.tsv > results/EfficientNetB7CIFAR100FocalModel_ECE.csv
 paste -d ',' results/Resnet50CIFAR100Model_ECE.csv results/Resnet50CIFAR100FocalGamma1Model_ECE.csv results/Densenet121CIFAR100Model_ECE.csv results/Densenet121CIFAR100FocalModel_ECE.csv results/EfficientNetB0CIFAR100Model_ECE.csv results/EfficientNetB0CIFAR100FocalModel_ECE.csv results/EfficientNetB7CIFAR100Model_ECE.csv results/EfficientNetB7CIFAR100FocalModel_ECE.csv > results/ECE.csv
-python3 make_plot.py results/ECE.csv ECE_CIFAR100 "lower left" 5
+python3 make_plot.py results/ECE.csv ECE_CIFAR100 "best" 5
 rm results/Resnet50CIFAR100Model_ECE.csv results/Resnet50CIFAR100FocalGamma1Model_ECE.csv results/Densenet121CIFAR100Model_ECE.csv results/Densenet121CIFAR100FocalModel_ECE.csv results/EfficientNetB0CIFAR100Model_ECE.csv results/EfficientNetB0CIFAR100FocalModel_ECE.csv results/EfficientNetB7CIFAR100Model_ECE.csv results/EfficientNetB7CIFAR100FocalModel_ECE.csv results/ECE.csv
 
 # Make Test error plot of CIFAR100
@@ -101,7 +101,7 @@ awk -F ',' '{print $13}' results/EfficientNetB0MiniImagenetFocalModel_result.tsv
 awk -F ',' '{print $13}' results/EfficientNetB7MiniImagenetModel_result.tsv > results/EfficientNetB7MiniImagenetModel_ECE.csv
 awk -F ',' '{print $13}' results/EfficientNetB7MiniImagenetFocalModel_result.tsv > results/EfficientNetB7MiniImagenetFocalModel_ECE.csv
 paste -d ',' results/Resnet50MiniImagenetModel_ECE.csv results/Resnet50MiniImagenetFocalGamma1Model_ECE.csv results/Densenet121MiniImagenetModel_ECE.csv results/Densenet121MiniImagenetFocalModel_ECE.csv results/EfficientNetB0MiniImagenetModel_ECE.csv results/EfficientNetB0MiniImagenetFocalModel_ECE.csv results/EfficientNetB7MiniImagenetModel_ECE.csv results/EfficientNetB7MiniImagenetFocalModel_ECE.csv > results/ECE.csv
-python3 make_plot.py results/ECE.csv ECE_MiniImagenet "lower left" 5
+python3 make_plot.py results/ECE.csv ECE_MiniImagenet "best" 5
 rm results/Resnet50MiniImagenetModel_ECE.csv results/Resnet50MiniImagenetFocalGamma1Model_ECE.csv results/Densenet121MiniImagenetModel_ECE.csv results/Densenet121MiniImagenetFocalModel_ECE.csv results/EfficientNetB0MiniImagenetModel_ECE.csv results/EfficientNetB0MiniImagenetFocalModel_ECE.csv results/EfficientNetB7MiniImagenetModel_ECE.csv results/EfficientNetB7MiniImagenetFocalModel_ECE.csv results/ECE.csv
 
 # Make Test error plot of MiniImagenet

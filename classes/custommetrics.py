@@ -202,6 +202,7 @@ class ECE(Metric):
     def __init__(self, output_transform=lambda x: x, device=None):
         self.n_bins = 25
         self._sum_ece = 0.0
+        self._count = 0
         self._accuracy_sum_bins = torch.zeros([self.n_bins], dtype=torch.float32)
         self._accuracy_num_bins = torch.zeros([self.n_bins], dtype=torch.int32)
         super(ECE, self).__init__(output_transform=output_transform, device=device)
@@ -216,10 +217,11 @@ class ECE(Metric):
     @reinit__is_reduced
     def update(self, output):
         y_pred, y = output
+        batch_size = y_pred.shape[0]
 
         softmaxes = F.softmax(y_pred, dim=1)
-        confidences, predictions = torch.max(softmaxes, 1)
-        accuracies = predictions.eq(y)
+        confidences, predictions = torch.max(softmaxes, 1)  # 0.72, 0.55, 0.75, 0.99, ... and 1, 8, 9, 2, ...
+        accuracies = predictions.eq(y)  # 0, 1, 1, 0, ...
 
         bin_boundaries = torch.linspace(0, 1, self.n_bins + 1)
         bin_lowers = bin_boundaries[:-1]
@@ -229,8 +231,8 @@ class ECE(Metric):
         idx = 0
         for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
             # Calculated |confidence - accuracy| in each bin
-            in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
-            prop_in_bin = in_bin.float().mean()
+            in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())  # 0, 0, ... 1, 1, ... 0, 0
+            prop_in_bin = in_bin.float().mean()  # |Bm|/n
             if prop_in_bin.item() > 0:
                 accuracy_in_bin = accuracies[in_bin].float().mean()
                 avg_confidence_in_bin = confidences[in_bin].mean()
@@ -242,7 +244,8 @@ class ECE(Metric):
             idx += 1
 
         # ece is for each epoch
-        self._sum_ece = ece.item()
+        self._sum_ece += ece.item() * batch_size
+        self._count += batch_size
 
     def compute(self):
         for i in range(self.n_bins):
@@ -251,5 +254,5 @@ class ECE(Metric):
             else:
                 self._accuracy_sum_bins[i] = self._accuracy_sum_bins[i]/self._accuracy_num_bins[i]
 
-        return self._sum_ece, self._accuracy_sum_bins.cpu(), self._accuracy_num_bins.cpu()
+        return self._sum_ece / self._count, self._accuracy_sum_bins.cpu(), self._accuracy_num_bins.cpu()
 

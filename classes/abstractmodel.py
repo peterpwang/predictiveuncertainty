@@ -123,12 +123,12 @@ class AbstractClassificationModel(ABC):
                 + 'Train Error,Test Error,Test ECE,'
                 + 'Train Accuracy,Test Accuracy\n')
         for i in range(len(loss)):
-            tsv_file.write('{:6.2f}'.format(nll[i]) + ',' + '{:6.2f}'.format(correct_nll[i]) + ',' + '{:6.2f}'.format(incorrect_nll[i]) + ',')
-            tsv_file.write('{:6.2f}'.format(correct_entropy[i]) + ',' + '{:6.2f}'.format(incorrect_entropy[i]) + ',') 
-            tsv_file.write('{:6.2f}'.format(test_nll[i]) + ',' + '{:6.2f}'.format(test_correct_nll[i]) + ',' + '{:6.2f}'.format(test_incorrect_nll[i]) + ',')
-            tsv_file.write('{:6.2f}'.format(test_correct_entropy[i]) + ',' + '{:6.2f}'.format(test_incorrect_entropy[i]) +',') 
-            tsv_file.write('{:6.2f}'.format(loss[i]) + ',' + '{:6.2f}'.format(test_loss[i]) + ',' + '{:6.2f}'.format(test_ece[i]) + ',') 
-            tsv_file.write('{:6.2f}'.format(acc[i]) + ',' + '{:6.2f}'.format(test_acc[i]) + '\n') 
+            tsv_file.write('{:6.3f}'.format(nll[i]) + ',' + '{:6.3f}'.format(correct_nll[i]) + ',' + '{:6.3f}'.format(incorrect_nll[i]) + ',')
+            tsv_file.write('{:6.3f}'.format(correct_entropy[i]) + ',' + '{:6.3f}'.format(incorrect_entropy[i]) + ',') 
+            tsv_file.write('{:6.3f}'.format(test_nll[i]) + ',' + '{:6.3f}'.format(test_correct_nll[i]) + ',' + '{:6.3f}'.format(test_incorrect_nll[i]) + ',')
+            tsv_file.write('{:6.3f}'.format(test_correct_entropy[i]) + ',' + '{:6.3f}'.format(test_incorrect_entropy[i]) +',') 
+            tsv_file.write('{:6.3f}'.format(loss[i]) + ',' + '{:6.3f}'.format(test_loss[i]) + ',' + '{:6.3f}'.format(test_ece[i]) + ',') 
+            tsv_file.write('{:6.3f}'.format(acc[i]) + ',' + '{:6.3f}'.format(test_acc[i]) + '\n') 
         tsv_file.close()
 
         # Reliability plot (only the last epoch)
@@ -171,12 +171,12 @@ class AbstractClassificationModel(ABC):
             for j in range(len(test_accuracy_num_bins[i])):
 
                 # Write reliability plot
-                rp_file.write('{:6.2f}'.format(test_accuracy_sum_bins[i][j]))
+                rp_file.write('{:6.3f}'.format(test_accuracy_sum_bins[i][j]))
                 if j<len(test_accuracy_num_bins[i])-1:
                     rp_file.write(',') 
 
                 # Write sample plot
-                sample_file.write('{:6.2f}'.format(test_accuracy_num_bins[i][j]/count_samples))
+                sample_file.write('{:6.3f}'.format(test_accuracy_num_bins[i][j]/count_samples))
                 if j<len(test_accuracy_num_bins[i])-1:
                     sample_file.write(',') 
 
@@ -297,7 +297,7 @@ class AbstractClassificationModel(ABC):
             history['incorrect_nll'].append(incorrect_nll)
             history['correct_entropy'].append(correct_entropy)
             history['incorrect_entropy'].append(incorrect_entropy)
-            print("Epoch[{}] Train Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
+            print("Epoch[{}] Train - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
                   .format(trainer.state.epoch, accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll), end=" ")
     
         def log_test_results(trainer):
@@ -319,8 +319,8 @@ class AbstractClassificationModel(ABC):
             history['test_correct_entropy'].append(correct_entropy)
             history['test_incorrect_entropy'].append(incorrect_entropy)
             history['test_ece'].append(ece)
-            print("Test Results - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f}"
-                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll))
+            print("Test - Accuracy: {:.3f} Loss: {:.3f} Entropy: {:.3f} {:.3f} NLL {:.3f} {:.3f} ECE {:.4f}"
+                  .format(accuracy, loss, correct_entropy, incorrect_entropy, correct_nll, incorrect_nll, ece))
 
             # Reliability plot
             history['test_accuracy_sum_bins'].append(accuracy_sum_bins)

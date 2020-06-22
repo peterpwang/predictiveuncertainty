@@ -210,6 +210,7 @@ class ECE(Metric):
     @reinit__is_reduced
     def reset(self):
         self._sum_ece = 0.0
+        self._count = 0
         self._accuracy_sum_bins = torch.zeros([self.n_bins], dtype=torch.float32)
         self._accuracy_num_bins = torch.zeros([self.n_bins], dtype=torch.int32)
         super(ECE, self).reset()

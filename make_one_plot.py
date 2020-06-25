@@ -15,17 +15,17 @@ if __name__ == "__main__":
     y6_label = ''
     y7_label = ''
     y8_label = ''
-    if (len(sys.argv)>=7):
+    if (len(sys.argv)>7):
         y3_label = sys.argv[7];
-    if (len(sys.argv)>=8):
+    if (len(sys.argv)>8):
         y4_label = sys.argv[8];
-    if (len(sys.argv)>=9):
+    if (len(sys.argv)>9):
         y5_label = sys.argv[9];
-    if (len(sys.argv)>=10):
+    if (len(sys.argv)>10):
         y6_label = sys.argv[10];
-    if (len(sys.argv)>=11):
+    if (len(sys.argv)>11):
         y7_label = sys.argv[11];
-    if (len(sys.argv)>=12):
+    if (len(sys.argv)>12):
         y8_label = sys.argv[12];
 
     x=[]

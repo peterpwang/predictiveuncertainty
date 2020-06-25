@@ -263,14 +263,14 @@ rm results/PoolCNNTwentyNewsgroupsModel_NLL.csv results/PoolCNNTwentyNewsgroupsF
 awk -F ',' '{print $13}' results/PoolCNNTwentyNewsgroupsModel_result.tsv > results/PoolCNNTwentyNewsgroupsModel_ECE.csv
 awk -F ',' '{print $13}' results/PoolCNNTwentyNewsgroupsFocalModel_result.tsv > results/PoolCNNTwentyNewsgroupsFocalModel_ECE.csv
 paste -d ',' results/PoolCNNTwentyNewsgroupsModel_ECE.csv results/PoolCNNTwentyNewsgroupsFocalModel_ECE.csv > results/ECE.csv
-python3 make_text_plot.py results/ECE.csv ECE_20Newsgroups "best" 1 "Pooling CNN" "Pooling CNN (FL γ=1)"
+python3 make_one_plot.py results/ECE.csv ECE_20Newsgroups "best" 1 "Pooling CNN" "Pooling CNN (FL γ=1)"
 rm results/PoolCNNTwentyNewsgroupsModel_ECE.csv results/PoolCNNTwentyNewsgroupsFocalModel_ECE.csv results/ECE.csv
 
 # Make Test error plot of 20 Newsgroups
 awk -F ',' '{print (1-$15)}' results/PoolCNNTwentyNewsgroupsModel_result.tsv > results/PoolCNNTwentyNewsgroupsModel_Error.csv
 awk -F ',' '{print (1-$15)}' results/PoolCNNTwentyNewsgroupsFocalModel_result.tsv > results/PoolCNNTwentyNewsgroupsFocalModel_Error.csv
 paste -d ',' results/PoolCNNTwentyNewsgroupsModel_Error.csv results/PoolCNNTwentyNewsgroupsFocalModel_Error.csv > results/Error.csv
-python3 make_text_plot.py results/Error.csv "TestError_20Newsgroups" "upper right" 1 "Pooling CNN" "Pooling CNN (FL γ=1)"
+python3 make_one_plot.py results/Error.csv "TestError_20Newsgroups" "upper right" 1 "Pooling CNN" "Pooling CNN (FL γ=1)"
 rm results/PoolCNNTwentyNewsgroupsModel_Error.csv results/PoolCNNTwentyNewsgroupsFocalModel_Error.csv results/Error.csv
 
 # Make NLL plot of SST

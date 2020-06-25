@@ -7,6 +7,8 @@ if __name__ == "__main__":
     title = sys.argv[2]
     legend_position = sys.argv[3]
     rolling = int(sys.argv[4])
+    x_label = sys.argv[5];
+    y_label = sys.argv[6];
 
     x=[]
     y1=[]
@@ -43,8 +45,8 @@ if __name__ == "__main__":
         yy2.append(s2)
         i += 1
 
-    plt.plot(xx, yy1, label='Tree LSTM')
-    plt.plot(xx, yy2, label='Tree LSTM (FL γ=1)')
+    plt.plot(xx, yy1, label=x_label)
+    plt.plot(xx, yy2, label=y_label)
 
     plt.title(title)
     plt.legend(loc=legend_position)

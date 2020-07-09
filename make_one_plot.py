@@ -101,14 +101,14 @@ if __name__ == "__main__":
             if(y8_label != ''):
                 s8 += y8[row+j]
 
-        yy1.append(s1)
-        yy2.append(s2)
-        yy3.append(s3)
-        yy4.append(s4)
-        yy5.append(s5)
-        yy6.append(s6)
-        yy7.append(s7)
-        yy8.append(s8)
+        yy1.append(s1/rolling)
+        yy2.append(s2/rolling)
+        yy3.append(s3/rolling)
+        yy4.append(s4/rolling)
+        yy5.append(s5/rolling)
+        yy6.append(s6/rolling)
+        yy7.append(s7/rolling)
+        yy8.append(s8/rolling)
         i += 1
 
     plt.plot(xx, yy1, label=y1_label)
